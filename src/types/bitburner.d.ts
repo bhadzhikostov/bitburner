@@ -216,6 +216,11 @@ declare global {
     getScriptIncome(script: string, host?: string, ...args: any[]): number;
     getScriptExpGain(script: string, host?: string, ...args: any[]): number;
 
+    // File operations
+    fileExists(filename: string, hostname?: string): boolean;
+    scp(files: string | string[], destination: string, source?: string): boolean;
+    copy(filename: string, destination: string, source?: string): boolean;
+
     // Player operations
     getPlayer(): Player;
     getHackingLevel(): number;
