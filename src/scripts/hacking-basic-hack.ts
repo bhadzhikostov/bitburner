@@ -12,13 +12,39 @@
 export async function main(ns: NS): Promise<void> {
   // Get the target server and thread count from command line arguments
   const target = ns.args[0];
-  const threads = Math.max(1, parseInt(ns.args[1] as string) || 1);
+  const requestedThreads = parseInt(ns.args[1] as string) || 0;
 
   if (!target) {
     ns.tprint('ERROR: Please provide a target server');
     ns.tprint('Usage: run hacking-basic-hack.js <target> [threads]');
     ns.tprint('Example: run hacking-basic-hack.js n00dles 1');
     return;
+  }
+
+  // Calculate optimal thread count
+  let threads: number;
+  if (requestedThreads && requestedThreads > 0) {
+    // Use user-specified thread count
+    threads = requestedThreads;
+    ns.tprint(`Using requested thread count: ${threads}`);
+  } else {
+    // Calculate max threads based on available RAM on the current server
+    const currentServer = ns.getHostname();
+    const ramAvailable = ns.getServerMaxRam(currentServer) - ns.getServerUsedRam(currentServer);
+
+    // Calculate RAM cost per thread for this entire script
+    const ramPerThread = ns.getScriptRam('hacking-basic-hack.js');
+
+    // Calculate max threads this server can support
+    threads = Math.floor(ramAvailable / ramPerThread);
+
+    // Ensure at least 1 thread
+    threads = Math.max(1, threads);
+
+    ns.tprint(`Auto-calculated optimal thread count: ${threads}`);
+    ns.tprint(`Current server: ${currentServer}`);
+    ns.tprint(`Available RAM: ${(ramAvailable / 1024).toFixed(2)} GB`);
+    ns.tprint(`RAM per thread: ${ramPerThread.toFixed(3)} GB`);
   }
 
   // Check if we can hack the target
