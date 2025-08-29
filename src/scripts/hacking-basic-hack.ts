@@ -4,17 +4,20 @@
  * This script performs a simple hack-grow-weaken cycle on a target server.
  * It's designed for early-game progression and learning the basics.
  *
- * Usage: run hacking-basic-hack.js <target>
- * Example: run hacking-basic-hack.js n00dles
+ * Usage: run hacking-basic-hack.js <target> [threads]
+ * Example: run hacking-basic-hack.js n00dles 1
+ * Example: run hacking-basic-hack.js foodnstuff 10
  */
 
 export async function main(ns: NS): Promise<void> {
-  // Get the target server from command line arguments
+  // Get the target server and thread count from command line arguments
   const target = ns.args[0];
+  const threads = Math.max(1, parseInt(ns.args[1] as string) || 1);
 
   if (!target) {
     ns.tprint('ERROR: Please provide a target server');
-    ns.tprint('Usage: run hacking-basic-hack.js <target>');
+    ns.tprint('Usage: run hacking-basic-hack.js <target> [threads]');
+    ns.tprint('Example: run hacking-basic-hack.js n00dles 1');
     return;
   }
 
@@ -32,7 +35,7 @@ export async function main(ns: NS): Promise<void> {
     return;
   }
 
-  ns.tprint(`Starting hack cycle on ${target}`);
+  ns.tprint(`Starting hack cycle on ${target} with ${threads} thread${threads > 1 ? 's' : ''}`);
   ns.tprint(
     `Server money: $${ns.formatNumber(server.moneyAvailable)} / $${ns.formatNumber(server.moneyMax)}`
   );
@@ -45,34 +48,34 @@ export async function main(ns: NS): Promise<void> {
   while (true) {
     // Check if we can hack the server
     if (ns.getHackingChance(target) < 0.8) {
-      ns.tprint(`WARNING: Low hack chance on ${target}, weakening...`);
+      ns.tprint(`WARNING: Low hack chance on ${target}, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Weaken the server to improve hack chance
-      await ns.weaken(target);
+      await ns.weaken(target, { threads });
       continue;
     }
 
     // Check if server has money to hack
     if (ns.getServerMoneyAvailable(target) < ns.getServerMaxMoney(target) * 0.1) {
-      ns.tprint(`Server ${target} is low on money, growing...`);
+      ns.tprint(`Server ${target} is low on money, growing with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Grow the server to restore money
-      await ns.grow(target);
+      await ns.grow(target, { threads });
       continue;
     }
 
     // Check if security is too high
     if (ns.getServerSecurityLevel(target) > ns.getServerMinSecurityLevel(target) + 5) {
-      ns.tprint(`Server ${target} security too high, weakening...`);
+      ns.tprint(`Server ${target} security too high, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Weaken the server to reduce security
-      await ns.weaken(target);
+      await ns.weaken(target, { threads });
       continue;
     }
 
     // All conditions met, perform the hack
-    ns.tprint(`Hacking ${target}...`);
-    const moneyStolen = await ns.hack(target);
+    ns.tprint(`Hacking ${target} with ${threads} thread${threads > 1 ? 's' : ''}...`);
+    const moneyStolen = await ns.hack(target, { threads });
 
     if (moneyStolen > 0) {
       ns.tprint(`Successfully hacked $${ns.formatNumber(moneyStolen)} from ${target}`);
