@@ -10,8 +10,8 @@
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "deploy": "npm run build && node tools/deploy.js",
-    "clean": "rm -rf dist/",
-    "setup": "mkdir -p src/{scripts,utils,types,config} dist tests docs examples tools"
+    "clean": "rm -rf game-scripts/",
+    "setup": "mkdir -p src/{scripts,utils,types,config} game-scripts tests docs examples tools"
   },
   "keywords": [
     "bitburner",

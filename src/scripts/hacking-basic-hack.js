@@ -40,7 +40,7 @@ export async function main(ns) {
   // Main hacking loop
   while (true) {
     // Check if we can hack the server
-    if (ns.getHackingChance(target) < 0.8) {
+    if (ns.hackAnalyzeChance(target) < 0.8) {
       ns.tprint(`WARNING: Low hack chance on ${target}, weakening...`);
 
       // Weaken the server to improve hack chance

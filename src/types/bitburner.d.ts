@@ -171,6 +171,7 @@ declare global {
     write(filename: string, data: string, mode?: 'w' | 'a'): void;
     rm(filename: string, host?: string): boolean;
     exists(filename: string, host?: string): boolean;
+    fileExists(filename: string, host?: string): boolean;
     ls(host?: string, grep?: string): string[];
     mv(filename: string, destination: string, host?: string): boolean;
     cp(filename: string, destination: string, host?: string): boolean;
@@ -189,11 +190,20 @@ declare global {
     getServerMaxRam(hostname: string): number;
     getServerUsedRam(hostname: string): number;
     getServerRam(hostname: string): number;
+    hasRootAccess(hostname: string): boolean;
 
     // Hacking operations
     hack(hostname: string, opts?: { threads?: number; stock?: boolean }): Promise<number>;
     grow(hostname: string, opts?: { threads?: number; stock?: boolean }): Promise<number>;
     weaken(hostname: string, opts?: { threads?: number; stock?: boolean }): Promise<number>;
+
+    // Port opening operations
+    brutessh(hostname: string): void;
+    ftpcrack(hostname: string): void;
+    relaysmtp(hostname: string): void;
+    httpworm(hostname: string): void;
+    sqlinject(hostname: string): void;
+    nuke(hostname: string): void;
 
     // Script operations
     exec(script: string, host: string, threads?: number, ...args: any[]): number;

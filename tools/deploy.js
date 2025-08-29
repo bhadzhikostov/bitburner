@@ -9,11 +9,24 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+// Expand leading ~ to user's home and normalize
+function expandPath(p) {
+  if (!p) return p;
+  if (p.startsWith('~')) {
+    return path.resolve(p.replace('~', os.homedir()));
+  }
+  return path.resolve(p);
+}
 
 // Configuration
 const CONFIG = {
   SOURCE_DIR: './dist',
-  GAME_SCRIPTS_DIR: process.env.BITBURNER_SCRIPTS_DIR || './game-scripts',
+  GAME_SCRIPTS_DIR: expandPath(
+    process.env.BITBURNER_SCRIPTS_DIR ||
+      '~/Library/Application Support/Steam/steamapps/common/Bitburner/scripts'
+  ),
   BACKUP_DIR: './backups',
   CREATE_BACKUP: true,
   VERBOSE: true
@@ -179,7 +192,7 @@ if (args.includes('--quiet')) {
 
 const gameDirIndex = args.indexOf('--game-dir');
 if (gameDirIndex !== -1 && args[gameDirIndex + 1]) {
-  CONFIG.GAME_SCRIPTS_DIR = args[gameDirIndex + 1];
+  CONFIG.GAME_SCRIPTS_DIR = expandPath(args[gameDirIndex + 1]);
 }
 
 // Run deployment
