@@ -72,9 +72,13 @@ export async function main(ns: NS): Promise<void> {
   // Main hacking loop
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    const minSecurityLevel = ns.getServerMinSecurityLevel(target);
+    const securityLevel = ns.getServerSecurityLevel(target);
+    const hackChance = ns.hackAnalyzeChance(target);
+
     // Check if we can hack the server
-    if (ns.getHackingChance(target) < 0.8) {
-      ns.tprint(`WARNING: Low hack chance on ${target}, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
+    if (hackChance < 0.8 && securityLevel !== minSecurityLevel) {
+      ns.tprint(`WARNING: Low hack chance on ${target}, weakening... chance: ${hackChance}, securityLevel: ${securityLevel}, minSecurityLevel: ${minSecurityLevel}`);
 
       // Weaken the server to improve hack chance
       await ns.weaken(target, { threads });
@@ -91,7 +95,7 @@ export async function main(ns: NS): Promise<void> {
     }
 
     // Check if security is too high
-    if (ns.getServerSecurityLevel(target) > ns.getServerMinSecurityLevel(target) + 5) {
+    if (securityLevel > (minSecurityLevel + 5)) {
       ns.tprint(`Server ${target} security too high, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Weaken the server to reduce security

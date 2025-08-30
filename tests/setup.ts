@@ -50,7 +50,7 @@ const mockNS = {
   getPlayer: jest.fn(),
   getHackingLevel: jest.fn(),
   getHackingMultipliers: jest.fn(),
-  getHackingChance: jest.fn(),
+  hackAnalyzeChance: jest.fn(),
   getHackingTime: jest.fn(),
   getGrowTime: jest.fn(),
   getWeakenTime: jest.fn(),

@@ -7,6 +7,9 @@
  *   run deploy.js hacking-basic-hack.js
  *   run deploy.js contract-solver.js --overwrite
  *   run deploy.js growth-server-manager.js --exclude home
+ *   run deploy.js hacking-basic-hack.js --run
+ *   run deploy.js hacking-basic-hack.js --run n00dles
+ *   run deploy.js contract-solver.js --overwrite --run foodnstuff 1000
  */
 
 import { getAllServers } from '../utils/helpers';
@@ -15,6 +18,8 @@ interface DeployOptions {
   overwrite: boolean;
   exclude: string[];
   verbose: boolean;
+  run: boolean;
+  runArgs: string[];
 }
 
 export async function main(ns: NS): Promise<void> {
@@ -28,11 +33,15 @@ export async function main(ns: NS): Promise<void> {
     ns.tprint('  --overwrite    Overwrite existing files');
     ns.tprint('  --exclude <server>  Exclude specific servers (can use multiple times)');
     ns.tprint('  --verbose      Show detailed deployment information');
+    ns.tprint('  --run [args...]  Run the script on all servers after deployment with optional arguments');
     ns.tprint('');
     ns.tprint('Examples:');
     ns.tprint('  run deploy.js hacking-basic-hack.js');
     ns.tprint('  run deploy.js contract-solver.js --overwrite');
     ns.tprint('  run deploy.js growth-server-manager.js --exclude home --exclude n00dles');
+    ns.tprint('  run deploy.js hacking-basic-hack.js --run');
+    ns.tprint('  run deploy.js hacking-basic-hack.js --run n00dles');
+    ns.tprint('  run deploy.js contract-solver.js --overwrite --run foodnstuff 1000');
     return;
   }
 
@@ -45,7 +54,9 @@ export async function main(ns: NS): Promise<void> {
   const options: DeployOptions = {
     overwrite: false,
     exclude: [],
-    verbose: false
+    verbose: false,
+    run: false,
+    runArgs: []
   };
 
   // Parse options
@@ -55,6 +66,16 @@ export async function main(ns: NS): Promise<void> {
       options.overwrite = true;
     } else if (arg === '--verbose') {
       options.verbose = true;
+    } else if (arg === '--run') {
+      options.run = true;
+      // Collect all arguments after --run
+      for (let j = i + 1; j < args.length; j++) {
+        const arg = args[j];
+        if (arg !== undefined) {
+          options.runArgs.push(arg);
+        }
+      }
+      break; // Stop parsing after --run as all remaining args are for the script
     } else if (arg === '--exclude' && i + 1 < args.length) {
       const excludeServer = args[i + 1];
       if (excludeServer) {
@@ -78,7 +99,10 @@ export async function main(ns: NS): Promise<void> {
   }
 
   ns.tprint(`Starting deployment of '${filename}' (${fileSize.toFixed(2)} GB RAM)`);
-  ns.tprint(`Options: overwrite=${options.overwrite}, exclude=${options.exclude.join(', ') || 'none'}`);
+  ns.tprint(`Options: overwrite=${options.overwrite}, exclude=${options.exclude.join(', ') || 'none'}, run=${options.run}`);
+  if (options.run && options.runArgs.length > 0) {
+    ns.tprint(`Script arguments: ${options.runArgs.join(' ')}`);
+  }
 
   // Get all servers
   const allServers = getAllServers(ns);
@@ -89,6 +113,7 @@ export async function main(ns: NS): Promise<void> {
   let successCount = 0;
   let skipCount = 0;
   let failCount = 0;
+  const deployedServers: string[] = [];
 
   // Deploy to each server
   for (const server of targetServers) {
@@ -130,6 +155,7 @@ export async function main(ns: NS): Promise<void> {
           ns.tprint(`SUCCESS: ${server} - Deployed successfully`);
         }
         successCount++;
+        deployedServers.push(server);
       } else {
         if (options.verbose) {
           ns.tprint(`FAIL: ${server} - Deployment failed`);
@@ -145,6 +171,42 @@ export async function main(ns: NS): Promise<void> {
     }
   }
 
+  // Run the script on all deployed servers if --run option is specified
+  let runSuccessCount = 0;
+  let runFailCount = 0;
+
+  if (options.run && deployedServers.length > 0) {
+    ns.tprint('');
+    ns.tprint('=== RUNNING SCRIPTS ===');
+    const argsDisplay = options.runArgs.length > 0 ? ` with arguments: ${options.runArgs.join(' ')}` : '';
+    ns.tprint(`Attempting to run '${filename}' on ${deployedServers.length} servers${argsDisplay}...`);
+
+    for (const server of deployedServers) {
+      try {
+        // Execute the script with 1 thread and any provided arguments
+        const pid = ns.exec(filename, server, 1, ...options.runArgs);
+        if (pid > 0) {
+          if (options.verbose) {
+            ns.tprint(`RUN SUCCESS: ${server} - Script started with PID ${pid}`);
+          }
+          runSuccessCount++;
+        } else {
+          if (options.verbose) {
+            ns.tprint(`RUN FAIL: ${server} - Failed to start script`);
+          }
+          runFailCount++;
+        }
+      } catch (error) {
+        if (options.verbose) {
+          ns.tprint(`RUN ERROR: ${server} - ${error}`);
+        }
+        runFailCount++;
+      }
+    }
+
+    ns.tprint(`Script execution summary: ${runSuccessCount} successful, ${runFailCount} failed`);
+  }
+
   // Print summary
   ns.tprint('');
   ns.tprint('=== DEPLOYMENT SUMMARY ===');
@@ -155,12 +217,16 @@ export async function main(ns: NS): Promise<void> {
   ns.tprint(`Skipped: ${skipCount}`);
   ns.tprint(`Failed: ${failCount}`);
 
+  if (options.run) {
+    ns.tprint(`Script execution: ${runSuccessCount} successful, ${runFailCount} failed`);
+  }
+
   if (successCount > 0) {
     ns.tprint(`✅ Deployment completed successfully on ${successCount} servers`);
+    if (options.run && runSuccessCount > 0) {
+      ns.tprint(`✅ Script execution started on ${runSuccessCount} servers`);
+    }
   } else {
     ns.tprint(`❌ No servers were deployed to successfully`);
   }
 }
-
-// Auto-start if run directly
-main(ns);

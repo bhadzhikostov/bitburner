@@ -119,41 +119,6 @@ declare global {
     isWorking: boolean;
     workTypeDescription: string;
     className: string;
-    crime_success_mult: number;
-    crime_money_mult: number;
-    isInvulnerable: boolean;
-    bitNodeN: number;
-    totalPlaytime: number;
-    location: string;
-    city: string;
-    companyName: string;
-    jobTitle: string;
-    jobDuties: string[];
-    jobRequiredSkills: { [key: string]: number };
-    jobRequiredExperience: number;
-    jobPerformance: number;
-    jobPerformanceType: number;
-    maxHp: number;
-    hp: number;
-    workHackExpGain: number;
-    workStrExpGain: number;
-    workDefExpGain: number;
-    workDexExpGain: number;
-    workAgiExpGain: number;
-    workChaExpGain: number;
-    workRepGain: number;
-    workMoneyGain: number;
-    timeWorked: number;
-    workType: number;
-    currentWorkFactionDescription: string;
-    crimeType: string;
-    crimeKarma: number;
-    crimeTypeDescription: string;
-    isWorking: boolean;
-    workTypeDescription: string;
-    className: string;
-    crime_success_mult: number;
-    crime_money_mult: number;
     isInvulnerable: boolean;
     bitNodeN: number;
     totalPlaytime: number;
@@ -166,6 +131,11 @@ declare global {
 
     // Logging and display
     clearLog(): void;
+    print(message: string): void;
+    tprint(message: string): void;
+    alert(message: string): void;
+    prompt(message: string): string | null;
+
     // File operations
     read(filename: string): string;
     write(filename: string, data: string, mode?: 'w' | 'a'): void;
@@ -175,6 +145,8 @@ declare global {
     ls(host?: string, grep?: string): string[];
     mv(filename: string, destination: string, host?: string): boolean;
     cp(filename: string, destination: string, host?: string): boolean;
+    scp(files: string | string[], destination: string, source?: string): boolean;
+    copy(filename: string, destination: string, source?: string): boolean;
 
     // Server operations
     scan(host?: string): string[];
@@ -207,6 +179,7 @@ declare global {
 
     // Script operations
     exec(script: string, host: string, threads?: number, ...args: any[]): number;
+    run(script: string, threads?: number, ...args: any[]): number;
     kill(script: string, host?: string, ...args: any[]): boolean;
     killall(host?: string, script?: string): boolean;
     isRunning(script: string, host?: string, ...args: any[]): boolean;
@@ -216,26 +189,17 @@ declare global {
     getScriptIncome(script: string, host?: string, ...args: any[]): number;
     getScriptExpGain(script: string, host?: string, ...args: any[]): number;
 
-    // File operations
-    fileExists(filename: string, hostname?: string): boolean;
-    scp(files: string | string[], destination: string, source?: string): boolean;
-    copy(filename: string, destination: string, source?: string): boolean;
-
     // Player operations
     getPlayer(): Player;
     getHackingLevel(): number;
     getHackingMultipliers(): any;
-    getHackingChance(hostname: string): number;
+    hackAnalyzeChance(hostname: string): number;
     getHackingTime(hostname: string): number;
     getGrowTime(hostname: string): number;
     getWeakenTime(hostname: string): number;
 
     // Utility functions
     sleep(ms: number): Promise<void>;
-    print(message: string): void;
-    tprint(message: string): void;
-    alert(message: string): void;
-    prompt(message: string): string | null;
     getTimeSinceLastAug(): number;
     getResetInfo(): any;
     formatNumber(num: number): string;
@@ -296,9 +260,6 @@ declare global {
     formulas: {
       hacking: {
         hackChance(server: Server, player: Player): number;
-        hackTime(server: Server, player: Player): number;
-        hackExp(server: Server, player: Player): number;
-        hackPercent(server: Server, player: Player): number;
         hackTime(server: Server, player: Player): number;
         hackExp(server: Server, player: Player): number;
         hackPercent(server: Server, player: Player): number;
