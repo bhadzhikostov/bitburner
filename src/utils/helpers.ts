@@ -192,58 +192,135 @@ export function killAllInstances(ns: NS, scriptName: string): void {
  * @returns true if root is obtained or already present
  */
 export function tryGainRoot(ns: NS, host: string): boolean {
+  // Check if we already have root access
   if (ns.hasRootAccess(host)) return true;
 
+  // Get server info to check requirements
+  const serverInfo = ns.getServer(host);
+  const player = ns.getPlayer();
+
+  // Check if player has required hacking level
+  if (player.hacking < serverInfo.requiredHackingSkill) {
+    return false; // Can't hack this server yet
+  }
+
   let portsOpened = 0;
-  try {
-    if (ns.fileExists('BruteSSH.exe', 'home')) {
+
+  // Try to open ports using available port openers
+  if (ns.fileExists('BruteSSH.exe', 'home')) {
+    try {
       ns.brutessh(host);
       portsOpened++;
+    } catch (error) {
+      // Port opener failed, continue with next one
     }
-  } catch {
-    // Port opener failed, continue with next one
   }
-  try {
-    if (ns.fileExists('FTPCrack.exe', 'home')) {
+
+  if (ns.fileExists('FTPCrack.exe', 'home')) {
+    try {
       ns.ftpcrack(host);
       portsOpened++;
+    } catch (error) {
+      // Port opener failed, continue with next one
     }
-  } catch {
-    // Port opener failed, continue with next one
   }
-  try {
-    if (ns.fileExists('relaySMTP.exe', 'home')) {
+
+  if (ns.fileExists('relaySMTP.exe', 'home')) {
+    try {
       ns.relaysmtp(host);
       portsOpened++;
+    } catch (error) {
+      // Port opener failed, continue with next one
     }
-  } catch {
-    // Port opener failed, continue with next one
   }
-  try {
-    if (ns.fileExists('HTTPWorm.exe', 'home')) {
+
+  if (ns.fileExists('HTTPWorm.exe', 'home')) {
+    try {
       ns.httpworm(host);
       portsOpened++;
+    } catch (error) {
+      // Port opener failed, continue with next one
     }
-  } catch {
-    // Port opener failed, continue with next one
   }
-  try {
-    if (ns.fileExists('SQLInject.exe', 'home')) {
+
+  if (ns.fileExists('SQLInject.exe', 'home')) {
+    try {
       ns.sqlinject(host);
       portsOpened++;
+    } catch (error) {
+      // Port opener failed, continue with next one
     }
-  } catch {
-    // Port opener failed, continue with next one
   }
 
-  const req = ns.getServerNumPortsRequired(host);
-  if (portsOpened >= req) {
+  // Check if we opened enough ports to nuke the server
+  const requiredPorts = serverInfo.numOpenPortsRequired;
+  if (portsOpened >= requiredPorts) {
     try {
       ns.nuke(host);
-    } catch {
-      // Nuke failed, continue
+    } catch (error) {
+      // Nuke failed, but we might still have access
     }
   }
 
+  // Return whether we now have root access
   return ns.hasRootAccess(host);
+}
+
+/**
+ * Get a list of available port openers that the player has
+ * @param ns - The Netscript API
+ * @returns Array of port opener names
+ */
+export function getAvailablePortOpeners(ns: NS): string[] {
+  const portOpeners: string[] = [];
+
+  if (ns.fileExists('BruteSSH.exe', 'home')) {
+    portOpeners.push('BruteSSH.exe');
+  }
+  if (ns.fileExists('FTPCrack.exe', 'home')) {
+    portOpeners.push('FTPCrack.exe');
+  }
+  if (ns.fileExists('relaySMTP.exe', 'home')) {
+    portOpeners.push('relaySMTP.exe');
+  }
+  if (ns.fileExists('HTTPWorm.exe', 'home')) {
+    portOpeners.push('HTTPWorm.exe');
+  }
+  if (ns.fileExists('SQLInject.exe', 'home')) {
+    portOpeners.push('SQLInject.exe');
+  }
+
+  return portOpeners;
+}
+
+/**
+ * Check if a server can potentially be hacked with current tools
+ * @param ns - The Netscript API
+ * @param host - The target hostname
+ * @returns Object with canHack boolean and reason string
+ */
+export function canHackServer(ns: NS, host: string): { canHack: boolean; reason: string } {
+  if (ns.hasRootAccess(host)) {
+    return { canHack: true, reason: 'Already have root access' };
+  }
+
+  const serverInfo = ns.getServer(host);
+  const player = ns.getPlayer();
+  const availablePortOpeners = getAvailablePortOpeners(ns);
+
+  if (player.hacking < serverInfo.requiredHackingSkill) {
+    return {
+      canHack: false,
+      reason: `Required hacking level: ${serverInfo.requiredHackingSkill}, player level: ${player.hacking}`
+    };
+  }
+
+  if (availablePortOpeners.length < serverInfo.numOpenPortsRequired) {
+    return {
+      canHack: false,
+      reason: `Required ports: ${serverInfo.numOpenPortsRequired}, available port openers: ${availablePortOpeners.length}`
+    };
+  }
+
+  return { canHack: true, reason: 'Can hack with available tools' };
 }

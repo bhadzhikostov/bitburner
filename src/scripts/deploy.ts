@@ -12,7 +12,7 @@
  *   run deploy.js contract-solver.js --overwrite --run foodnstuff 1000
  */
 
-import { getAllServers, tryGainRoot } from '../utils/helpers';
+import { getAllServers, tryGainRoot, canHackServer, getAvailablePortOpeners } from '../utils/helpers';
 
 interface DeployOptions {
   overwrite: boolean;
@@ -110,6 +110,12 @@ export async function main(ns: NS): Promise<void> {
 
   ns.tprint(`Found ${targetServers.length} target servers (${allServers.length} total, ${options.exclude.length} excluded)`);
 
+  // Show available port openers if verbose mode
+  if (options.verbose) {
+    const availablePortOpeners = getAvailablePortOpeners(ns);
+    ns.tprint(`Available port openers: ${availablePortOpeners.join(', ') || 'none'}`);
+  }
+
   let successCount = 0;
   let skipCount = 0;
   let failCount = 0;
@@ -127,6 +133,16 @@ export async function main(ns: NS): Promise<void> {
           ns.tprint(`ATTEMPTING: ${server} - No admin rights, attempting to gain root access...`);
         }
 
+        // Check if we can potentially gain access
+        const hackCheck = canHackServer(ns, server);
+        if (!hackCheck.canHack) {
+          if (options.verbose) {
+            ns.tprint(`SKIP: ${server} - ${hackCheck.reason}`);
+          }
+          skipCount++;
+          continue;
+        }
+
         const rootGained = tryGainRoot(ns, server);
         if (rootGained) {
           if (options.verbose) {
@@ -136,7 +152,8 @@ export async function main(ns: NS): Promise<void> {
           serverInfo = ns.getServer(server);
         } else {
           if (options.verbose) {
-            ns.tprint(`SKIP: ${server} - Could not gain root access`);
+            const availablePortOpeners = getAvailablePortOpeners(ns);
+            ns.tprint(`SKIP: ${server} - Could not gain root access. Available port openers: ${availablePortOpeners.join(', ') || 'none'}`);
           }
           skipCount++;
           continue;
