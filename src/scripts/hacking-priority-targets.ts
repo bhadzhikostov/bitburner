@@ -7,68 +7,7 @@
  * Usage: run src/scripts/hacking-priority-targets.js [threadsPerTarget]
  */
 
-/**
- * Try to gain root access using available port openers.
- * @param ns - The Netscript API
- * @param host - The target hostname
- * @returns true if root is obtained or already present
- */
-function tryGainRoot(ns: NS, host: string): boolean {
-  if (ns.hasRootAccess(host)) return true;
-
-  let portsOpened = 0;
-  try {
-    if (ns.fileExists('BruteSSH.exe', 'home')) {
-      ns.brutessh(host);
-      portsOpened++;
-    }
-  } catch {
-    // Port opener failed, continue with next one
-  }
-  try {
-    if (ns.fileExists('FTPCrack.exe', 'home')) {
-      ns.ftpcrack(host);
-      portsOpened++;
-    }
-  } catch {
-    // Port opener failed, continue with next one
-  }
-  try {
-    if (ns.fileExists('relaySMTP.exe', 'home')) {
-      ns.relaysmtp(host);
-      portsOpened++;
-    }
-  } catch {
-    // Port opener failed, continue with next one
-  }
-  try {
-    if (ns.fileExists('HTTPWorm.exe', 'home')) {
-      ns.httpworm(host);
-      portsOpened++;
-    }
-  } catch {
-    // Port opener failed, continue with next one
-  }
-  try {
-    if (ns.fileExists('SQLInject.exe', 'home')) {
-      ns.sqlinject(host);
-      portsOpened++;
-    }
-  } catch {
-    // Port opener failed, continue with next one
-  }
-
-  const req = ns.getServerNumPortsRequired(host);
-  if (portsOpened >= req) {
-    try {
-      ns.nuke(host);
-    } catch {
-      // Nuke failed, continue
-    }
-  }
-
-  return ns.hasRootAccess(host);
-}
+import { tryGainRoot } from '../utils/helpers';
 
 /** @param ns - The Netscript API */
 export async function main(ns: NS): Promise<void> {

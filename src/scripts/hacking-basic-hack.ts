@@ -77,8 +77,8 @@ export async function main(ns: NS): Promise<void> {
     const hackChance = ns.hackAnalyzeChance(target);
 
     // Check if we can hack the server
-    if (hackChance < 0.8 && securityLevel !== minSecurityLevel) {
-      ns.tprint(`WARNING: Low hack chance on ${target}, weakening... chance: ${hackChance}, securityLevel: ${securityLevel}, minSecurityLevel: ${minSecurityLevel}`);
+    if (hackChance < 0.8 && Math.floor(securityLevel) !== minSecurityLevel) {
+      ns.tprint(`WARNING: Low hack chance on ${target}, weakening... chance: ${ns.formatNumber(hackChance)}, securityLevel: ${ns.formatNumber(securityLevel)}, minSecurityLevel: ${ns.formatNumber(minSecurityLevel)}`);
 
       // Weaken the server to improve hack chance
       await ns.weaken(target, { threads });

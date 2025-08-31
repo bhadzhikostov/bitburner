@@ -12,7 +12,7 @@
  *   run deploy.js contract-solver.js --overwrite --run foodnstuff 1000
  */
 
-import { getAllServers } from '../utils/helpers';
+import { getAllServers, tryGainRoot } from '../utils/helpers';
 
 interface DeployOptions {
   overwrite: boolean;
@@ -115,18 +115,32 @@ export async function main(ns: NS): Promise<void> {
   let failCount = 0;
   const deployedServers: string[] = [];
 
+
   // Deploy to each server
   for (const server of targetServers) {
     try {
-      const serverInfo = ns.getServer(server);
+      let serverInfo = ns.getServer(server);
 
-      // Check if server has admin rights
+      // Check if server has admin rights, try to gain root access if not
       if (!serverInfo.hasAdminRights) {
         if (options.verbose) {
-          ns.tprint(`SKIP: ${server} - No admin rights`);
+          ns.tprint(`ATTEMPTING: ${server} - No admin rights, attempting to gain root access...`);
         }
-        skipCount++;
-        continue;
+
+        const rootGained = tryGainRoot(ns, server);
+        if (rootGained) {
+          if (options.verbose) {
+            ns.tprint(`SUCCESS: ${server} - Root access gained`);
+          }
+          // Refresh server info after gaining root
+          serverInfo = ns.getServer(server);
+        } else {
+          if (options.verbose) {
+            ns.tprint(`SKIP: ${server} - Could not gain root access`);
+          }
+          skipCount++;
+          continue;
+        }
       }
 
       // Check if file already exists
