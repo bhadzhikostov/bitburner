@@ -4,19 +4,27 @@
  * This script performs a simple hack-grow-weaken cycle on a target server.
  * It's designed for early-game progression and learning the basics.
  *
- * Usage: run hacking-basic-hack.js <target> [threads]
+ * Usage: run hacking-basic-hack.js <target> [threads] [--verbose]
  * Example: run hacking-basic-hack.js n00dles 1
- * Example: run hacking-basic-hack.js foodnstuff 10
+ * Example: run hacking-basic-hack.js foodnstuff 10 --verbose
  */
 
 export async function main(ns: NS): Promise<void> {
-  // Get the target server and thread count from command line arguments
-  const target = ns.args[0];
-  const requestedThreads = parseInt(ns.args[1] as string) || 0;
+  // Parse flags and positional args manually to avoid type issues
+  const rawArgs = ns.args as string[];
+  const verbose = rawArgs.includes('--verbose') || rawArgs.includes('-v');
+  const positional = rawArgs.filter((arg) => !arg.startsWith('-'));
+
+  const target = positional[0];
+  const requestedThreads = parseInt(positional[1] || '0') || 0;
+
+  const vprint = (message: string): void => {
+    if (verbose) ns.tprint(message);
+  };
 
   if (!target) {
     ns.tprint('ERROR: Please provide a target server');
-    ns.tprint('Usage: run hacking-basic-hack.js <target> [threads]');
+    ns.tprint('Usage: run hacking-basic-hack.js <target> [threads] [--verbose]');
     ns.tprint('Example: run hacking-basic-hack.js n00dles 1');
     return;
   }
@@ -26,7 +34,7 @@ export async function main(ns: NS): Promise<void> {
   if (requestedThreads && requestedThreads > 0) {
     // Use user-specified thread count
     threads = requestedThreads;
-    ns.tprint(`Using requested thread count: ${threads}`);
+    vprint(`Using requested thread count: ${threads}`);
   } else {
     // Calculate max threads based on available RAM on the current server
     const currentServer = ns.getHostname();
@@ -41,10 +49,10 @@ export async function main(ns: NS): Promise<void> {
     // Ensure at least 1 thread
     threads = Math.max(1, threads);
 
-    ns.tprint(`Auto-calculated optimal thread count: ${threads}`);
-    ns.tprint(`Current server: ${currentServer}`);
-    ns.tprint(`Available RAM: ${(ramAvailable / 1024).toFixed(2)} GB`);
-    ns.tprint(`RAM per thread: ${ramPerThread.toFixed(3)} GB`);
+    vprint(`Auto-calculated optimal thread count: ${threads}`);
+    vprint(`Current server: ${currentServer}`);
+    vprint(`Available RAM: ${(ramAvailable / 1024).toFixed(2)} GB`);
+    vprint(`RAM per thread: ${ramPerThread.toFixed(3)} GB`);
   }
 
   // Check if we can hack the target
@@ -61,11 +69,11 @@ export async function main(ns: NS): Promise<void> {
     return;
   }
 
-  ns.tprint(`Starting hack cycle on ${target} with ${threads} thread${threads > 1 ? 's' : ''}`);
-  ns.tprint(
+  vprint(`Starting hack cycle on ${target} with ${threads} thread${threads > 1 ? 's' : ''}`);
+  vprint(
     `Server money: $${ns.formatNumber(server.moneyAvailable)} / $${ns.formatNumber(server.moneyMax)}`
   );
-  ns.tprint(
+  vprint(
     `Security level: ${server.hackDifficulty.toFixed(2)} / ${server.minDifficulty.toFixed(2)}`
   );
 
@@ -78,7 +86,7 @@ export async function main(ns: NS): Promise<void> {
 
     // Check if we can hack the server
     if (hackChance < 0.8 && Math.floor(securityLevel) !== minSecurityLevel) {
-      ns.tprint(`WARNING: Low hack chance on ${target}, weakening... chance: ${ns.formatNumber(hackChance)}, securityLevel: ${ns.formatNumber(securityLevel)}, minSecurityLevel: ${ns.formatNumber(minSecurityLevel)}`);
+      vprint(`WARNING: Low hack chance on ${target}, weakening... chance: ${ns.formatNumber(hackChance)}, securityLevel: ${ns.formatNumber(securityLevel)}, minSecurityLevel: ${ns.formatNumber(minSecurityLevel)}`);
 
       // Weaken the server to improve hack chance
       await ns.weaken(target, { threads });
@@ -87,7 +95,7 @@ export async function main(ns: NS): Promise<void> {
 
     // Check if server has money to hack
     if (ns.getServerMoneyAvailable(target) < ns.getServerMaxMoney(target) * 0.1) {
-      ns.tprint(`Server ${target} is low on money, growing with ${threads} thread${threads > 1 ? 's' : ''}...`);
+      vprint(`Server ${target} is low on money, growing with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Grow the server to restore money
       await ns.grow(target, { threads });
@@ -96,7 +104,7 @@ export async function main(ns: NS): Promise<void> {
 
     // Check if security is too high
     if (securityLevel > (minSecurityLevel + 5)) {
-      ns.tprint(`Server ${target} security too high, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
+      vprint(`Server ${target} security too high, weakening with ${threads} thread${threads > 1 ? 's' : ''}...`);
 
       // Weaken the server to reduce security
       await ns.weaken(target, { threads });
@@ -104,13 +112,13 @@ export async function main(ns: NS): Promise<void> {
     }
 
     // All conditions met, perform the hack
-    ns.tprint(`Hacking ${target} with ${threads} thread${threads > 1 ? 's' : ''}...`);
+    vprint(`Hacking ${target} with ${threads} thread${threads > 1 ? 's' : ''}...`);
     const moneyStolen = await ns.hack(target, { threads });
 
     if (moneyStolen > 0) {
       ns.tprint(`Successfully hacked $${ns.formatNumber(moneyStolen)} from ${target}`);
     } else {
-      ns.tprint(`Hack failed on ${target}`);
+      vprint(`Hack failed on ${target}`);
     }
 
     // Small delay between cycles
