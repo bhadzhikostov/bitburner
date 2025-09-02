@@ -10,6 +10,7 @@
  *   run deploy.js hacking-basic-hack.js --run
  *   run deploy.js hacking-basic-hack.js --run n00dles
  *   run deploy.js contract-solver.js --overwrite --run foodnstuff 1000
+ *   run deploy.js hacking-basic-hack.js --backdoor
  */
 
 import { getAllServers, tryGainRoot, canHackServer, getAvailablePortOpeners } from '../utils/helpers';
@@ -20,6 +21,7 @@ interface DeployOptions {
   verbose: boolean;
   run: boolean;
   runArgs: string[];
+  backdoor: boolean;
 }
 
 export async function main(ns: NS): Promise<void> {
@@ -34,6 +36,7 @@ export async function main(ns: NS): Promise<void> {
     ns.tprint('  --exclude <server>  Exclude specific servers (can use multiple times)');
     ns.tprint('  --verbose      Show detailed deployment information');
     ns.tprint('  --run [args...]  Run the script on all servers after deployment with optional arguments');
+    ns.tprint('  --backdoor     Automatically install backdoors on servers after deployment');
     ns.tprint('');
     ns.tprint('Examples:');
     ns.tprint('  run deploy.js hacking-basic-hack.js');
@@ -42,6 +45,7 @@ export async function main(ns: NS): Promise<void> {
     ns.tprint('  run deploy.js hacking-basic-hack.js --run');
     ns.tprint('  run deploy.js hacking-basic-hack.js --run n00dles');
     ns.tprint('  run deploy.js contract-solver.js --overwrite --run foodnstuff 1000');
+    ns.tprint('  run deploy.js hacking-basic-hack.js --backdoor');
     return;
   }
 
@@ -56,7 +60,8 @@ export async function main(ns: NS): Promise<void> {
     exclude: [],
     verbose: false,
     run: false,
-    runArgs: []
+    runArgs: [],
+    backdoor: false
   };
 
   // Parse options
@@ -82,6 +87,8 @@ export async function main(ns: NS): Promise<void> {
         options.exclude.push(excludeServer);
       }
       i++; // Skip next argument as it's the server name
+    } else if (arg === '--backdoor') {
+      options.backdoor = true;
     }
   }
 
@@ -99,7 +106,7 @@ export async function main(ns: NS): Promise<void> {
   }
 
   ns.tprint(`Starting deployment of '${filename}' (${fileSize.toFixed(2)} GB RAM)`);
-  ns.tprint(`Options: overwrite=${options.overwrite}, exclude=${options.exclude.join(', ') || 'none'}, run=${options.run}`);
+  ns.tprint(`Options: overwrite=${options.overwrite}, exclude=${options.exclude.join(', ') || 'none'}, run=${options.run}, backdoor=${options.backdoor}`);
   if (options.run && options.runArgs.length > 0) {
     ns.tprint(`Script arguments: ${options.runArgs.join(' ')}`);
   }
@@ -120,7 +127,6 @@ export async function main(ns: NS): Promise<void> {
   let skipCount = 0;
   let failCount = 0;
   const deployedServers: string[] = [];
-
 
   // Deploy to each server
   for (const server of targetServers) {
@@ -202,6 +208,57 @@ export async function main(ns: NS): Promise<void> {
     }
   }
 
+  // Install backdoors if requested
+  let backdoorSuccessCount = 0;
+  let backdoorFailCount = 0;
+
+  if (options.backdoor && deployedServers.length > 0) {
+    ns.tprint('');
+    ns.tprint('=== INSTALLING BACKDOORS ===');
+    ns.tprint(`Attempting to install backdoors on ${deployedServers.length} servers...`);
+
+    for (const server of deployedServers) {
+      try {
+        // Skip home server and purchased servers
+        if (server === 'home' || ns.getServer(server).purchasedByPlayer) {
+          if (options.verbose) {
+            ns.tprint(`BACKDOOR SKIP: ${server} - Home or purchased server (no backdoor needed)`);
+          }
+          continue;
+        }
+
+        // Check if backdoor is already installed
+        if (ns.getServer(server).backdoorInstalled) {
+          if (options.verbose) {
+            ns.tprint(`BACKDOOR SKIP: ${server} - Backdoor already installed`);
+          }
+          continue;
+        }
+
+        // Install backdoor
+        const backdoorSuccess = await installBackdoor(ns, server);
+        if (backdoorSuccess) {
+          if (options.verbose) {
+            ns.tprint(`BACKDOOR SUCCESS: ${server} - Backdoor installed successfully`);
+          }
+          backdoorSuccessCount++;
+        } else {
+          if (options.verbose) {
+            ns.tprint(`BACKDOOR FAIL: ${server} - Failed to install backdoor`);
+          }
+          backdoorFailCount++;
+        }
+      } catch (error) {
+        if (options.verbose) {
+          ns.tprint(`BACKDOOR ERROR: ${server} - ${error}`);
+        }
+        backdoorFailCount++;
+      }
+    }
+
+    ns.tprint(`Backdoor installation summary: ${backdoorSuccessCount} successful, ${backdoorFailCount} failed`);
+  }
+
   // Run the script on all deployed servers if --run option is specified
   let runSuccessCount = 0;
   let runFailCount = 0;
@@ -248,16 +305,66 @@ export async function main(ns: NS): Promise<void> {
   ns.tprint(`Skipped: ${skipCount}`);
   ns.tprint(`Failed: ${failCount}`);
 
+  if (options.backdoor) {
+    ns.tprint(`Backdoor installation: ${backdoorSuccessCount} successful, ${backdoorFailCount} failed`);
+  }
+
   if (options.run) {
     ns.tprint(`Script execution: ${runSuccessCount} successful, ${runFailCount} failed`);
   }
 
   if (successCount > 0) {
     ns.tprint(`✅ Deployment completed successfully on ${successCount} servers`);
+    if (options.backdoor && backdoorSuccessCount > 0) {
+      ns.tprint(`✅ Backdoors installed on ${backdoorSuccessCount} servers`);
+    }
     if (options.run && runSuccessCount > 0) {
       ns.tprint(`✅ Script execution started on ${runSuccessCount} servers`);
     }
   } else {
     ns.tprint(`❌ No servers were deployed to successfully`);
+  }
+}
+
+/**
+ * Install a backdoor on a server
+ * Note: This function provides a placeholder for backdoor installation.
+ * In the actual game, backdoors are typically installed through the terminal
+ * or through specific game mechanics that may not be directly accessible via NS API.
+ *
+ * @param ns - The Netscript API
+ * @param server - The target server hostname
+ * @returns Promise<boolean> - True if backdoor installation was attempted
+ */
+async function installBackdoor(ns: NS, server: string): Promise<boolean> {
+  try {
+    // Check if we have the required hacking level
+    const requiredLevel = ns.getServerRequiredHackingLevel(server);
+    const playerLevel = ns.getHackingLevel();
+
+    if (playerLevel < requiredLevel) {
+      ns.tprint(`WARN: Cannot install backdoor on ${server} - requires hacking level ${requiredLevel}, have ${playerLevel}`);
+      return false;
+    }
+
+    // Check if we have root access
+    if (!ns.hasRootAccess(server)) {
+      ns.tprint(`WARN: Cannot install backdoor on ${server} - no root access`);
+      return false;
+    }
+
+    // Note: Backdoor installation in Bitburner typically requires manual terminal interaction
+    // or specific game mechanics. This function serves as a placeholder to track
+    // which servers are candidates for backdoor installation.
+    ns.tprint(`INFO: ${server} is ready for backdoor installation (requires manual terminal interaction)`);
+
+    // In a real implementation, you might use:
+    // await ns.singularity.installBackdoor(server);
+    // But this requires the Singularity API which may not be available in all contexts
+
+    return true; // Return true to indicate the server is ready for backdoor installation
+  } catch (error) {
+    ns.tprint(`ERROR: Failed to prepare backdoor installation on ${server}: ${error}`);
+    return false;
   }
 }

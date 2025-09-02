@@ -76,8 +76,8 @@ export const CONFIG = {
   // Advanced features
   ADVANCED: {
     USE_FORMULAS: true,             // Use game formulas when available
-    AUTO_BACKDOOR: false,           // Automatically install backdoors
-    AUTO_NUKE: false,               // Automatically nuke servers
+    AUTO_BACKDOOR: true,           // Automatically install backdoors
+    AUTO_NUKE: true,               // Automatically nuke servers
     PRIORITY_TARGETS: [             // Priority hacking targets
       'n00dles',
       'foodnstuff',
