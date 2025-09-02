@@ -271,11 +271,22 @@ export async function main(ns: NS): Promise<void> {
 
     for (const server of deployedServers) {
       try {
-        // Execute the script with 1 thread and any provided arguments
-        const pid = ns.exec(filename, server, 1, ...options.runArgs);
+        const info = ns.getServer(server);
+        const freeRam = Math.max(0, info.maxRam - info.ramUsed);
+        const maxThreads = Math.floor(freeRam / fileSize);
+
+        if (maxThreads < 1) {
+          if (options.verbose) {
+            ns.tprint(`RUN SKIP: ${server} - Insufficient free RAM (${freeRam.toFixed(2)} GB available, needs at least ${fileSize.toFixed(2)} GB)`);
+          }
+          runFailCount++;
+          continue;
+        }
+
+        const pid = ns.exec(filename, server, maxThreads, ...options.runArgs);
         if (pid > 0) {
           if (options.verbose) {
-            ns.tprint(`RUN SUCCESS: ${server} - Script started with PID ${pid}`);
+            ns.tprint(`RUN SUCCESS: ${server} - Started with ${maxThreads} threads (PID ${pid})`);
           }
           runSuccessCount++;
         } else {

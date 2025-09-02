@@ -11,12 +11,13 @@
 
 export async function main(ns: NS): Promise<void> {
   // Parse flags and positional args manually to avoid type issues
-  const rawArgs = ns.args as string[];
-  const verbose = rawArgs.includes('--verbose') || rawArgs.includes('-v');
-  const positional = rawArgs.filter((arg) => !arg.startsWith('-'));
+  const rawArgs = ns.args;
+  const verbose = rawArgs.some((arg) => arg === '--verbose' || arg === '-v');
+  const positional = rawArgs.filter((arg) => !(typeof arg === 'string' && arg.startsWith('-')));
 
-  const target = positional[0];
-  const requestedThreads = parseInt(positional[1] || '0') || 0;
+  const target = typeof positional[0] === 'string' ? positional[0] : String(positional[0] || '');
+  const requestedThreads =
+    typeof positional[1] === 'number' ? positional[1] : parseInt(String(positional[1] || '0')) || 0;
 
   const vprint = (message: string): void => {
     if (verbose) ns.tprint(message);
