@@ -206,7 +206,9 @@ export async function main(ns: NS): Promise<void> {
         const player = ns.getPlayer();
 
         // Calculate optimal threads for each operation
-        const optimalHackThreads = Math.ceil(ns.formulas.hacking.hackPercent(targetServer, player) * 100);
+        // hackPercent returns decimal (e.g., 0.25 for 25%), so to get 100% we need 1/hackPercent threads
+        const hackPercent = ns.formulas.hacking.hackPercent(targetServer, player);
+        const optimalHackThreads = Math.ceil(1 / hackPercent);
         const optimalWeakenThreads = Math.ceil((targetServer.hackDifficulty - targetServer.minDifficulty) / 0.05);
 
         // Use growThreads function from Formulas.exe API
@@ -216,13 +218,16 @@ export async function main(ns: NS): Promise<void> {
         // Use the official growThreads function from Formulas.exe
         const optimalGrowThreads = Math.ceil(ns.formulas.hacking.growThreads(targetServer, player, targetMoney, cores));
 
-        // Scale to available threads while maintaining ratios
+        // Calculate ratios based on optimal thread counts
         const totalOptimal = optimalHackThreads + optimalWeakenThreads + optimalGrowThreads;
-        const scaleFactor = Math.min(1, maxThreads / totalOptimal);
+        const hackRatio = optimalHackThreads / totalOptimal;
+        const weakenRatio = optimalWeakenThreads / totalOptimal;
+        const growRatio = optimalGrowThreads / totalOptimal;
 
-        hackThreads = Math.max(1, Math.floor(optimalHackThreads * scaleFactor));
-        weakenThreads = Math.max(1, Math.floor(optimalWeakenThreads * scaleFactor));
-        growThreads = Math.max(1, Math.floor(optimalGrowThreads * scaleFactor));
+        // Distribute available threads based on optimal ratios
+        hackThreads = Math.max(1, Math.floor(maxThreads * hackRatio));
+        weakenThreads = Math.max(1, Math.floor(maxThreads * weakenRatio));
+        growThreads = Math.max(1, Math.floor(maxThreads * growRatio));
       } else {
         // Fallback to ratio-based distribution
         hackThreads = Math.max(1, Math.floor(maxThreads * options.hackRatio));
