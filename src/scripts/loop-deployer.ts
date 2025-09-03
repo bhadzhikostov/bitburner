@@ -165,14 +165,9 @@ export async function main(ns: NS): Promise<void> {
       const serverInfo = ns.getServer(server);
       const availableRam = serverInfo.maxRam - serverInfo.ramUsed;
 
-      // Calculate RAM requirements for all scripts
-      const scriptRams = {
-        hack: ns.getScriptRam(scripts.hack),
-        weaken: ns.getScriptRam(scripts.weaken),
-        grow: ns.getScriptRam(scripts.grow)
-      };
-
-      const totalScriptRam = scriptRams.hack + scriptRams.weaken + scriptRams.grow;
+      // Calculate RAM requirements (all scripts have identical RAM usage)
+      const scriptRam = ns.getScriptRam(scripts.hack);
+      const totalScriptRam = scriptRam * 3; // 3 scripts total
 
       if (availableRam < totalScriptRam) {
         if (options.verbose) {
@@ -197,7 +192,7 @@ export async function main(ns: NS): Promise<void> {
       }
 
       // Calculate optimal thread distribution
-      const maxThreads = Math.floor(availableRam / totalScriptRam);
+      const maxThreads = Math.floor(availableRam / scriptRam);
       const hackThreads = Math.max(1, Math.floor(maxThreads * options.hackRatio));
       const weakenThreads = Math.max(1, Math.floor(maxThreads * options.weakenRatio));
       const growThreads = Math.max(1, Math.floor(maxThreads * options.growRatio));
