@@ -84,6 +84,9 @@ export function getHackableServers(ns: NS): Server[] {
   const hackableServers: Server[] = [];
 
   for (const hostname of allServers) {
+    // Proactively try to gain root before evaluating
+    tryGainRoot(ns, hostname);
+
     const server = ns.getServer(hostname);
     if (
       server.hasAdminRights &&
@@ -111,6 +114,13 @@ export function getBestHackTarget(ns: NS): Server | null {
     const growthScore = server.serverGrowth / 100; // Normalize growth
 
     const totalScore = moneyScore * 0.5 + securityScore * 0.3 + growthScore * 0.2;
+
+    // Log for debugging the scores for each server
+    log(
+      ns,
+      `Score for ${server.hostname}: moneyScore=${moneyScore.toFixed(3)}, securityScore=${securityScore.toFixed(3)}, growthScore=${growthScore.toFixed(3)}, totalScore=${totalScore.toFixed(3)}`,
+      'INFO'
+    );
 
     return { server, score: totalScore };
   });

@@ -49,15 +49,16 @@ export async function main(ns: NS): Promise<void> {
       const currentRam = server.maxRam;
 
       if (currentRam < targetRam) {
-        const upgradeCost = ns.getPurchasedServerUpgradeCost(serverName, targetRam);
+        const stepRam = Math.min(targetRam, currentRam * 2);
+        const upgradeCost = ns.getPurchasedServerUpgradeCost(serverName, stepRam);
 
         if (availableMoney >= upgradeCost) {
-          if (ns.upgradePurchasedServer(serverName, targetRam)) {
-            ns.tprint(`Upgraded ${serverName} to ${targetRam}GB RAM`);
+          if (ns.upgradePurchasedServer(serverName, stepRam)) {
+            ns.tprint(`Upgraded ${serverName} to ${stepRam}GB RAM`);
           }
         } else {
           ns.print(
-            `Need $${ns.formatNumber(upgradeCost)} to upgrade ${serverName} to ${targetRam}GB RAM`
+            `Need $${ns.formatNumber(upgradeCost)} to upgrade ${serverName} to ${stepRam}GB RAM`
           );
         }
       }

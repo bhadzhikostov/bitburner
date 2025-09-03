@@ -215,6 +215,18 @@ declare global {
     shortStock(symbol: string, shares: number): boolean;
     sellShort(symbol: string, shares: number): boolean;
 
+    // Newer TIX API namespace style
+    stock?: {
+      getSymbols(): string[];
+      getPrice(symbol: string): number;
+      getForecast(symbol: string): number;
+      getVolatility(symbol: string): number;
+      // In the game this typically returns 4 entries: [longShares, longAvg, shortShares, shortAvg]
+      getPosition(symbol: string): [number, number, number?, number?];
+      buy(symbol: string, shares: number): number; // returns cost or 0 on failure
+      sell(symbol: string, shares: number): number; // returns revenue or 0 on failure
+    };
+
     // Corporation
     getCorporation(): any;
     createCorporation(corpName: string, selfFund: boolean): boolean;

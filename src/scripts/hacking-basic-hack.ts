@@ -9,40 +9,13 @@
  */
 
 export async function main(ns: NS): Promise<void> {
-  // Parse positional args only
-  const rawArgs = ns.args;
-  const positional: Array<string> = rawArgs.map((arg) => String(arg));
-  const target = typeof positional[0] === 'string' ? positional[0] : '';
+  const target = ns.args[0];
 
   if (!target) {
     ns.tprint('ERROR: Please provide a target server');
     ns.tprint('Usage: run hacking-basic-hack.js <target>');
     return;
   }
-
-  // Thread count is determined by how the script was started; no need to compute here
-
-  // Check if we can hack the target
-  const player = ns.getPlayer();
-  const server = ns.getServer(target);
-
-  if (!server.hasAdminRights) {
-    ns.tprint(`ERROR: No admin rights on ${target}`);
-    return;
-  }
-
-  if (player.hacking < server.requiredHackingSkill) {
-    ns.tprint(`ERROR: Need ${server.requiredHackingSkill} hacking skill, have ${player.hacking}`);
-    return;
-  }
-
-  ns.print(`Starting hack cycle on ${target}`);
-  ns.print(
-    `Server money: $${ns.formatNumber(server.moneyAvailable)} / $${ns.formatNumber(server.moneyMax)}`
-  );
-  ns.print(
-    `Security level: ${server.hackDifficulty.toFixed(2)} / ${server.minDifficulty.toFixed(2)}`
-  );
 
   // Main hacking loop
   // eslint-disable-next-line no-constant-condition

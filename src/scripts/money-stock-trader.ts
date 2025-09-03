@@ -8,13 +8,23 @@
  */
 
 export async function main(ns: NS): Promise<void> {
+  interface StockNS {
+    getSymbols(): string[];
+    getPrice(symbol: string): number;
+    getForecast(symbol: string): number;
+    getVolatility(symbol: string): number;
+    getPosition(symbol: string): [number, number, number?, number?];
+    buy(symbol: string, shares: number): number;
+    sell(symbol: string, shares: number): number;
+  }
+  const stock = (ns as unknown as { stock?: StockNS }).stock;
   // Check if we have access to the stock market
-  if (!ns.getStockSymbols || ns.getStockSymbols().length === 0) {
+  if (!stock || stock.getSymbols().length === 0) {
     ns.tprint('ERROR: Stock market not available yet');
     return;
   }
 
-  const symbols = ns.getStockSymbols();
+  const symbols = stock.getSymbols();
   ns.tprint(`Starting stock trading with ${symbols.length} symbols available`);
 
   // Trading parameters
@@ -33,12 +43,12 @@ export async function main(ns: NS): Promise<void> {
 
     // Check each stock
     for (const symbol of symbols) {
-      const price = ns.getStockPrice(symbol);
-      const forecast = ns.getStockForecast(symbol);
-      const volatility = ns.getStockVolatility(symbol);
+      const price = stock.getPrice(symbol);
+      const forecast = stock.getForecast(symbol);
+      const volatility = stock.getVolatility(symbol);
 
       // Get current position
-      const position = ns.getStockPosition(symbol);
+      const position = stock.getPosition(symbol);
       const shares = position[0];
       const avgPrice = position[1];
       // const totalCost = shares * avgPrice; // Unused variable
@@ -57,7 +67,8 @@ export async function main(ns: NS): Promise<void> {
         // Sell if forecast is good or we have good profit
         if (forecast > sellThreshold || profitPercent > 20) {
           ns.print(`  Selling ${symbol} - Good forecast or profit target reached`);
-          if (ns.sellStock(symbol, shares)) {
+          const sellResult = stock.sell(symbol, shares);
+          if (sellResult && sellResult > 0) {
             ns.tprint(
               `Sold ${ns.formatNumber(shares)} shares of ${symbol} for $${ns.formatNumber(price * shares)}`
             );
@@ -73,7 +84,8 @@ export async function main(ns: NS): Promise<void> {
             ns.print(
               `  Buying ${symbol} - Low forecast, investing $${ns.formatNumber(investment)}`
             );
-            if (ns.buyStock(symbol, sharesToBuy)) {
+            const buyResult = stock.buy(symbol, sharesToBuy);
+            if (buyResult && buyResult > 0) {
               ns.tprint(
                 `Bought ${ns.formatNumber(sharesToBuy)} shares of ${symbol} for $${ns.formatNumber(investment)}`
               );
