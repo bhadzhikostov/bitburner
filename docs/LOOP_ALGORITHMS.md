@@ -23,10 +23,9 @@ run loop-hack.js <target> [threads]
 ```
 
 **Features:**
-- Only hacks when server has sufficient money (≥75% of max)
-- Only hacks when security is manageable (≤min + 5)
-- Provides detailed statistics on hack success and money stolen
-- Calculates optimal timing based on hack duration
+- **Minimal Overhead**: Simple continuous hack loop for maximum efficiency
+- **Thread Management**: Thread count determined by deployer using Formulas.exe
+- **Zero RAM Cost**: Uses `ns.sleep()` and `ns.asleep()` for timing (0 RAM cost)
 
 **Example:**
 ```bash
@@ -43,10 +42,9 @@ run loop-weaken.js <target> [threads]
 ```
 
 **Features:**
-- Only weakens when security is above minimum level
-- Provides detailed statistics on security reduction
-- Calculates optimal timing based on weaken duration
-- Waits intelligently when security is already optimal
+- **Minimal Overhead**: Simple continuous weaken loop for maximum efficiency
+- **Thread Management**: Thread count determined by deployer using Formulas.exe
+- **Zero RAM Cost**: Uses `ns.sleep()` and `ns.asleep()` for timing (0 RAM cost)
 
 **Example:**
 ```bash
@@ -63,10 +61,9 @@ run loop-grow.js <target> [threads]
 ```
 
 **Features:**
-- Only grows when server money is below threshold (≤90% of max)
-- Provides detailed statistics on money gained
-- Calculates optimal timing based on grow duration
-- Waits intelligently when money is already sufficient
+- **Minimal Overhead**: Simple continuous grow loop for maximum efficiency
+- **Thread Management**: Thread count determined by deployer using Formulas.exe
+- **Zero RAM Cost**: Uses `ns.sleep()` and `ns.asleep()` for timing (0 RAM cost)
 
 **Example:**
 ```bash
@@ -91,11 +88,13 @@ run loop-deployer.js <target> [options]
 - `--kill-existing` - Kill existing loop scripts before deploying
 
 **Features:**
+- **Formulas.exe Integration**: Uses `ns.formulas.hacking` API for optimal thread calculation
+- **Centralized Intelligence**: All calculations handled by deployer, scripts remain minimal
 - Automatically gains root access on target servers
-- Calculates optimal thread distribution based on available RAM
-- Deploys all three scripts simultaneously
+- **Intelligent Thread Distribution**: Calculates optimal threads using analyze functions when available
+- Deploys all three scripts with staggered timing to prevent overhacking
 - Provides comprehensive deployment statistics
-- Excludes home server by default to preserve resources
+- **Adaptive Deployment**: Falls back to ratio-based distribution if Formulas.exe unavailable
 
 **Examples:**
 ```bash
@@ -160,8 +159,11 @@ The Loop Algorithms bundle is designed to work alongside your existing Bitburner
 ## Performance Considerations
 
 - Each script runs independently, so they can be distributed across multiple servers
-- Minimal overhead with basic continuous loops for maximum efficiency
-- Thread distribution is optimized with 1:2:10 ratios (hack:weaken:grow)
+- **Minimal Script Overhead**: Individual scripts are as simple as possible for maximum efficiency
+- **Centralized Intelligence**: All Formulas.exe calculations handled by deployer
+- **Intelligent Thread Distribution**: Deployer uses analyze functions when available, falls back to 1:2:10 ratios
+- **Adaptive Threading**: Deployer calculates optimal threads based on current server conditions
+- **Core-Aware Growth**: Uses `ns.formulas.hacking.growThreads()` with server cores for optimal grow thread calculations
 - Staggered startup timing prevents overhacking issues
 - Monitor target server money/security levels and adjust ratios as needed
 

@@ -272,9 +272,13 @@ declare global {
     formulas: {
       hacking: {
         hackChance(server: Server, player: Player): number;
-        hackTime(server: Server, player: Player): number;
         hackExp(server: Server, player: Player): number;
         hackPercent(server: Server, player: Player): number;
+        hackTime(server: Server, player: Player): number;
+        growPercent(server: Server, player: Player, threads: number, cores?: number): number;
+        growThreads(server: Server, player: Player, targetMoney: number, cores?: number): number;
+        growTime(server: Server, player: Player): number;
+        weakenTime(server: Server, player: Player): number;
       };
       growth: {
         growTime(server: Server, player: Player, threads: number): number;

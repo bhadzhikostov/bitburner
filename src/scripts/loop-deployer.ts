@@ -101,7 +101,11 @@ export async function main(ns: NS): Promise<void> {
     return;
   }
 
+  // Check if Formulas.exe is available
+  const hasFormulas = ns.fileExists('Formulas.exe', 'home');
+
   ns.tprint(`Starting loop deployment for target: ${target}`);
+  ns.tprint(`Formulas.exe available: ${hasFormulas ? 'YES' : 'NO'}`);
   ns.tprint(`Thread ratios - Hack: ${(options.hackRatio * 100).toFixed(1)}%, Weaken: ${(options.weakenRatio * 100).toFixed(1)}%, Grow: ${(options.growRatio * 100).toFixed(1)}%`);
   ns.tprint(`Ratio breakdown: 1 part hack, 2 parts weaken, 10 parts grow (total: 13 parts)`);
 
@@ -193,9 +197,38 @@ export async function main(ns: NS): Promise<void> {
 
       // Calculate optimal thread distribution
       const maxThreads = Math.floor(availableRam / scriptRam);
-      const hackThreads = Math.max(1, Math.floor(maxThreads * options.hackRatio));
-      const weakenThreads = Math.max(1, Math.floor(maxThreads * options.weakenRatio));
-      const growThreads = Math.max(1, Math.floor(maxThreads * options.growRatio));
+
+      let hackThreads, weakenThreads, growThreads;
+
+      if (hasFormulas) {
+        // Use Formulas.exe for optimal thread calculation
+        const targetServer = ns.getServer(target);
+        const player = ns.getPlayer();
+
+        // Calculate optimal threads for each operation
+        const optimalHackThreads = Math.ceil(ns.formulas.hacking.hackPercent(targetServer, player) * 100);
+        const optimalWeakenThreads = Math.ceil((targetServer.hackDifficulty - targetServer.minDifficulty) / 0.05);
+
+        // Use growThreads function from Formulas.exe API
+        const targetMoney = targetServer.moneyMax * 0.95; // Target 95% of max money
+        const cores = serverInfo.cpuCores; // Use cores from the executing server
+
+        // Use the official growThreads function from Formulas.exe
+        const optimalGrowThreads = Math.ceil(ns.formulas.hacking.growThreads(targetServer, player, targetMoney, cores));
+
+        // Scale to available threads while maintaining ratios
+        const totalOptimal = optimalHackThreads + optimalWeakenThreads + optimalGrowThreads;
+        const scaleFactor = Math.min(1, maxThreads / totalOptimal);
+
+        hackThreads = Math.max(1, Math.floor(optimalHackThreads * scaleFactor));
+        weakenThreads = Math.max(1, Math.floor(optimalWeakenThreads * scaleFactor));
+        growThreads = Math.max(1, Math.floor(optimalGrowThreads * scaleFactor));
+      } else {
+        // Fallback to ratio-based distribution
+        hackThreads = Math.max(1, Math.floor(maxThreads * options.hackRatio));
+        weakenThreads = Math.max(1, Math.floor(maxThreads * options.weakenRatio));
+        growThreads = Math.max(1, Math.floor(maxThreads * options.growRatio));
+      }
 
       // Start scripts with staggered timing to prevent overhacking
       const pids = {
@@ -219,7 +252,8 @@ export async function main(ns: NS): Promise<void> {
         totalThreads += hackThreads + weakenThreads + growThreads;
 
         if (options.verbose) {
-          log(ns, `SUCCESS: ${server} - Deployed with ${hackThreads}H/${weakenThreads}W/${growThreads}G threads (PIDs: ${pids.hack}/${pids.weaken}/${pids.grow})`, 'INFO');
+          const method = hasFormulas ? 'Formulas.exe' : 'Ratio-based';
+          log(ns, `SUCCESS: ${server} - Deployed with ${hackThreads}H/${weakenThreads}W/${growThreads}G threads (${method}, PIDs: ${pids.hack}/${pids.weaken}/${pids.grow})`, 'INFO');
         }
       } else {
         log(ns, `FAIL: ${server} - Some scripts failed to start`, 'ERROR');
