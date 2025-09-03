@@ -22,13 +22,12 @@ export async function main(ns: NS): Promise<void> {
   while (true) {
     const minSecurityLevel = ns.getServerMinSecurityLevel(target);
     const securityLevel = ns.getServerSecurityLevel(target);
-    const hackChance = ns.hackAnalyzeChance(target);
 
-    // Check if we can hack the server
-    if (hackChance < 0.8 && Math.floor(securityLevel) !== minSecurityLevel) {
-      ns.print(`WARNING: Low hack chance on ${target}, weakening... chance: ${ns.formatNumber(hackChance)}, securityLevel: ${ns.formatNumber(securityLevel)}, minSecurityLevel: ${ns.formatNumber(minSecurityLevel)}`);
+    // Check if security is too high
+    if (securityLevel > (minSecurityLevel + 5)) {
+      ns.print(`Server ${target} security too high, weakening...`);
 
-      // Weaken the server to improve hack chance
+      // Weaken the server to reduce security
       await ns.weaken(target);
       continue;
     }
@@ -39,15 +38,6 @@ export async function main(ns: NS): Promise<void> {
 
       // Grow the server to restore money
       await ns.grow(target);
-      continue;
-    }
-
-    // Check if security is too high
-    if (securityLevel > (minSecurityLevel + 5)) {
-      ns.print(`Server ${target} security too high, weakening...`);
-
-      // Weaken the server to reduce security
-      await ns.weaken(target);
       continue;
     }
 
