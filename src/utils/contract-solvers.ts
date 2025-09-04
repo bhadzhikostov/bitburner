@@ -103,6 +103,46 @@ const solveTotalWaysToSum: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Algorithmic Stock Trader III solver
+ * Finds maximum profit with at most 2 transactions
+ */
+const solveAlgorithmicStockTraderIII: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length < 2) return 0;
+  
+  const prices = data.filter((price: any) => typeof price === 'number');
+  if (prices.length < 2) return 0;
+  
+  const n = prices.length;
+  const firstPrice = prices[0];
+  if (firstPrice === undefined) return 0;
+  
+  // Track maximum profit with 0, 1, and 2 transactions
+  // buy1: cost of first buy (negative, we want to minimize this)
+  // sell1: profit after first sell (we want to maximize this)
+  // buy2: cost of second buy (negative, we want to minimize this)
+  // sell2: profit after second sell (we want to maximize this)
+  let buy1 = -firstPrice;
+  let sell1 = 0;
+  let buy2 = -firstPrice;
+  let sell2 = 0;
+  
+  for (let i = 1; i < n; i++) {
+    const price = prices[i];
+    if (price === undefined) continue;
+    
+    // Update first transaction
+    buy1 = Math.max(buy1, -price); // Buy at lowest price
+    sell1 = Math.max(sell1, buy1 + price); // Sell at highest profit
+    
+    // Update second transaction
+    buy2 = Math.max(buy2, sell1 - price); // Buy with profit from first transaction
+    sell2 = Math.max(sell2, buy2 + price); // Sell at highest total profit
+  }
+  
+  return Math.max(0, sell2); // Return 0 if no profit can be made
+};
+
+/**
  * Proper 2-Coloring of a Graph solver
  */
 const solveProper2ColoringGraph: ContractSolver = (data: any): any => {
@@ -163,7 +203,8 @@ export const contractSolvers: ContractSolverRegistry = {
   'Find Largest Prime Factor': solveFindLargestPrimeFactor,
   'Subarray with Maximum Sum': solveSubarrayWithMaximumSum,
   'Total Ways to Sum': solveTotalWaysToSum,
-  'Proper 2-Coloring of a Graph': solveProper2ColoringGraph
+  'Proper 2-Coloring of a Graph': solveProper2ColoringGraph,
+  'Algorithmic Stock Trader III': solveAlgorithmicStockTraderIII
 };
 
 /**
