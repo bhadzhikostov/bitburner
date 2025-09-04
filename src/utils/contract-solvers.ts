@@ -12,19 +12,21 @@ const solveArrayJumpingGame: ContractSolver = (data: any): any => {
   if (!Array.isArray(data) || data.length <= 1) return 0;
 
   const n = data.length;
-  const jumps = new Array(n).fill(Infinity);
-  jumps[0] = 0;
+  const canReach = new Array(n).fill(false);
+  canReach[0] = true;
 
   for (let i = 0; i < n; i++) {
-    const jumpDistance = data[i];
-    if (typeof jumpDistance === 'number') {
-      for (let j = 1; j <= jumpDistance && i + j < n; j++) {
-        jumps[i + j] = Math.min(jumps[i + j], jumps[i] + 1);
+    if (canReach[i]) {
+      const jumpDistance = data[i];
+      if (typeof jumpDistance === 'number') {
+        for (let j = 1; j <= jumpDistance && i + j < n; j++) {
+          canReach[i + j] = true;
+        }
       }
     }
   }
 
-  return jumps[n - 1] === Infinity ? 0 : jumps[n - 1];
+  return canReach[n - 1] ? 1 : 0;
 };
 
 /**
