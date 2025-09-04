@@ -242,9 +242,6 @@ declare global {
     // Singularity
     getSingularity(): any;
 
-    // Coding contracts
-    getCodingContract(hostname: string, filename: string): any;
-    attemptCodingContract(filename: string, answer: any): boolean;
 
     // Ports
     getPortHandle(portNumber: number): any;
@@ -267,6 +264,15 @@ declare global {
       args: string[];
       pid: number;
     }>;
+
+    codingcontract: {
+      attempt(answer: any, filename: string, hostname?: string): boolean;
+      createDummyContract(type: string): string;
+      getContractType(filename: string, hostname?: string): string;
+      getData(filename: string, hostname?: string): any;
+      getDescription(filename: string, hostname?: string): string;
+      getNumTriesRemaining(filename: string, hostname?: string): number;
+    }
 
     // Formulas
     formulas: {

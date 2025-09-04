@@ -90,8 +90,14 @@ const mockNS = {
   getSingularity: jest.fn(),
 
   // Coding contracts
-  getCodingContract: jest.fn(),
-  attemptCodingContract: jest.fn(),
+  codingcontract: {
+    attempt: jest.fn(),
+    createDummyContract: jest.fn(),
+    getContractType: jest.fn(),
+    getData: jest.fn(),
+    getDescription: jest.fn(),
+    getNumTriesRemaining: jest.fn(),
+  },
 
   // Ports
   getPortHandle: jest.fn(),

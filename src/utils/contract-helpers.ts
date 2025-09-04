@@ -45,15 +45,19 @@ export function findAllContracts(ns: NS): Array<{ hostname: string; filename: st
  */
 export function getContractInfo(ns: NS, hostname: string, filename: string): CodingContract | null {
   try {
-    const contract = ns.getCodingContract(filename, hostname);
-    if (!contract) return null;
+    const type = ns.codingcontract.getContractType(filename, hostname);
+    const description = ns.codingcontract.getDescription(filename, hostname);
+    const data = ns.codingcontract.getData(filename, hostname);
+    const numTries = ns.codingcontract.getNumTriesRemaining(filename, hostname);
+    
+    if (!type) return null;
 
     return {
-      type: contract.type,
-      description: contract.description,
-      data: contract.data,
-      numTries: contract.numTries,
-      maxTries: contract.maxTries
+      type,
+      description,
+      data,
+      numTries,
+      maxTries: 3 // Standard max tries for coding contracts
     };
   } catch (error) {
     ns.print(`Error getting contract info for ${filename} on ${hostname}: ${error}`);
@@ -71,7 +75,7 @@ export function attemptContract(
   solution: any
 ): ContractResult {
   try {
-    const success = ns.attemptCodingContract(filename, solution);
+    const success = ns.codingcontract.attempt(solution, filename, hostname);
 
     if (success) {
       return {

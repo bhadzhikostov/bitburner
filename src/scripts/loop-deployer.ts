@@ -170,7 +170,7 @@ export async function main(ns: NS): Promise<void> {
       const availableRam = serverInfo.maxRam - serverInfo.ramUsed;
 
       // Calculate RAM requirements (all scripts have identical RAM usage)
-      const scriptRam = ns.getScriptRam(scripts.hack);
+      const scriptRam = ns.getScriptRam(scripts.grow);
       const totalScriptRam = scriptRam * 3; // 3 scripts total
 
       if (availableRam < totalScriptRam) {
