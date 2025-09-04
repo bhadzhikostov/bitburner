@@ -101,13 +101,67 @@ const solveTotalWaysToSum: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Proper 2-Coloring of a Graph solver
+ */
+const solveProper2ColoringGraph: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length !== 2) return [];
+  
+  const [numVertices, edges] = data;
+  if (typeof numVertices !== 'number' || !Array.isArray(edges)) return [];
+  
+  // Create adjacency list
+  const graph: number[][] = Array.from({ length: numVertices }, () => []);
+  
+  for (const edge of edges) {
+    if (Array.isArray(edge) && edge.length === 2) {
+      const [u, v] = edge;
+      if (typeof u === 'number' && typeof v === 'number' && 
+          u >= 0 && u < numVertices && v >= 0 && v < numVertices) {
+        graph[u]?.push(v);
+        graph[v]?.push(u);
+      }
+    }
+  }
+  
+  // Colors: -1 = uncolored, 0 = color 0, 1 = color 1
+  const colors: number[] = new Array(numVertices).fill(-1);
+  
+  // Try to color each connected component
+  for (let i = 0; i < numVertices; i++) {
+    if (colors[i] === -1) {
+      // BFS to color this component
+      const queue: number[] = [i];
+      colors[i] = 0;
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        
+        for (const neighbor of graph[current] || []) {
+          if (colors[neighbor] === -1) {
+            // Assign opposite color
+            colors[neighbor] = 1 - (colors[current] || 0);
+            queue.push(neighbor);
+          } else if (colors[neighbor] === colors[current]) {
+            // Conflict found - graph is not bipartite
+            return [];
+          }
+        }
+      }
+    }
+  }
+  
+  return colors;
+};
+
+/**
  * Registry of contract solvers
  */
 export const contractSolvers: ContractSolverRegistry = {
   'Array Jumping Game': solveArrayJumpingGame,
   'Find Largest Prime Factor': solveFindLargestPrimeFactor,
   'Subarray with Maximum Sum': solveSubarrayWithMaximumSum,
-  'Total Ways to Sum': solveTotalWaysToSum
+  'Total Ways to Sum': solveTotalWaysToSum,
+  'Proper 2-Coloring of a Graph': solveProper2ColoringGraph
 };
 
 /**
