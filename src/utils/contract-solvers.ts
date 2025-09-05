@@ -143,6 +143,57 @@ const solveAlgorithmicStockTraderIII: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Merge Overlapping Intervals solver
+ */
+const solveMergeOverlappingIntervals: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length === 0) return [];
+
+  // Validate and normalize intervals
+  const intervals: [number, number][] = [];
+  for (const item of data) {
+    if (
+      Array.isArray(item) &&
+      item.length === 2 &&
+      typeof item[0] === 'number' &&
+      typeof item[1] === 'number'
+    ) {
+      intervals.push([item[0], item[1]]);
+    }
+  }
+
+  if (intervals.length === 0) return [];
+
+  // Sort by start ascending, and then by end ascending
+  intervals.sort((a, b) => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]));
+
+  const merged: [number, number][] = [];
+  const firstInterval = intervals[0]!;
+  let [currentStart, currentEnd] = firstInterval;
+
+  for (let i = 1; i < intervals.length; i++) {
+    const nextInterval = intervals[i]!;
+    const start = nextInterval[0];
+    const end = nextInterval[1];
+    if (start <= currentEnd) {
+      // Overlap, extend the current interval
+      currentEnd = Math.max(currentEnd, end);
+    } else {
+      // No overlap, push current and move on
+      merged.push([currentStart, currentEnd]);
+      currentStart = start;
+      currentEnd = end;
+    }
+  }
+
+  // Push the last interval
+  merged.push([currentStart, currentEnd]);
+
+  return merged;
+};
+
+// (removed duplicate definition)
+
+/**
  * Proper 2-Coloring of a Graph solver
  */
 const solveProper2ColoringGraph: ContractSolver = (data: any): any => {
@@ -204,7 +255,8 @@ export const contractSolvers: ContractSolverRegistry = {
   'Subarray with Maximum Sum': solveSubarrayWithMaximumSum,
   'Total Ways to Sum': solveTotalWaysToSum,
   'Proper 2-Coloring of a Graph': solveProper2ColoringGraph,
-  'Algorithmic Stock Trader III': solveAlgorithmicStockTraderIII
+  'Algorithmic Stock Trader III': solveAlgorithmicStockTraderIII,
+  'Merge Overlapping Intervals': solveMergeOverlappingIntervals
 };
 
 /**
@@ -227,3 +279,4 @@ export function hasContractSolver(contractType: string): boolean {
 export function getSupportedContractTypes(): string[] {
   return Object.keys(contractSolvers);
 }
+// (removed duplicate definition)
