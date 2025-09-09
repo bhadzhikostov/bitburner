@@ -417,6 +417,8 @@ const solveRLECompression: ContractSolver = (data: any): any => {
       count++;
     }
 
+    const originalCount = count;
+
     // Encode runs of 10 or more by splitting into multiple runs
     while (count > 0) {
       const runLength = Math.min(count, 9);
@@ -424,7 +426,7 @@ const solveRLECompression: ContractSolver = (data: any): any => {
       count -= runLength;
     }
 
-    i += count || 1;
+    i += originalCount;
   }
 
   return result;

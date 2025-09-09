@@ -1,0 +1,262 @@
+/**
+ * Jest tests for contract solvers
+ */
+
+import { contractSolvers, getContractSolver, hasContractSolver } from '../game-scripts/utils/contract-solvers.js';
+
+describe('Contract Solvers', () => {
+  describe('Encryption I: Caesar Cipher', () => {
+    const solver = contractSolvers['Encryption I: Caesar Cipher'];
+    
+    test('should encrypt text with left shift', () => {
+      const data = ["SHELL ARRAY CACHE LOGIN SHIFT", 7];
+      const result = solver(data);
+      expect(result).toBe('LAXEE TKKTR VTVAX EHZBG LABYM');
+    });
+
+    test('should handle empty input', () => {
+      expect(solver([])).toBe('');
+      expect(solver(['', 5])).toBe('');
+      expect(solver(['test', 'invalid'])).toBe('');
+    });
+
+    test('should handle different shift values', () => {
+      const data = ["HELLO", 1];
+      const result = solver(data);
+      expect(result).toBe('GDKKN');
+    });
+  });
+
+  describe('Array Jumping Game', () => {
+    const solver = contractSolvers['Array Jumping Game'];
+    
+    test('should return 1 for reachable array', () => {
+      const data = [2,8,5,3,6,1,3,10,5,2,8,9,0,0,9,0,10,10];
+      const result = solver(data);
+      expect(result).toBe(1);
+    });
+
+    test('should return 0 for unreachable array', () => {
+      const data = [0,1,2,3];
+      const result = solver(data);
+      expect(result).toBe(0);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver([])).toBe(0);
+      expect(solver([1])).toBe(0);
+      expect(solver([1,0])).toBe(1);
+    });
+  });
+
+  describe('Merge Overlapping Intervals', () => {
+    const solver = contractSolvers['Merge Overlapping Intervals'];
+    
+    test('should merge overlapping intervals', () => {
+      const data = [[6,11],[6,12],[22,30],[9,12]];
+      const result = solver(data);
+      expect(result).toEqual([[6,12],[22,30]]);
+    });
+
+    test('should handle example from contract', () => {
+      const data = [[1, 3], [8, 10], [2, 6], [10, 16]];
+      const result = solver(data);
+      expect(result).toEqual([[1, 6], [8, 16]]);
+    });
+
+    test('should handle empty input', () => {
+      expect(solver([])).toEqual([]);
+      expect(solver([['invalid']])).toEqual([]);
+    });
+  });
+
+  describe('Algorithmic Stock Trader III', () => {
+    const solver = contractSolvers['Algorithmic Stock Trader III'];
+    
+    test('should calculate maximum profit with at most 2 transactions', () => {
+      const data = [13,104,69,47,70,114,146,116,1,108,61,50,174,85,10,73,184,147,21,99,138,141,36];
+      const result = solver(data);
+      expect(typeof result).toBe('number');
+      expect(result).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should return 0 for no profit scenario', () => {
+      const data = [5,4,3,2,1];
+      const result = solver(data);
+      expect(result).toBe(0);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver([])).toBe(0);
+      expect(solver([1])).toBe(0);
+      expect(solver([1,2])).toBe(1);
+    });
+  });
+
+  describe('Generate IP Addresses', () => {
+    const solver = contractSolvers['Generate IP Addresses'];
+    
+    test('should generate valid IP addresses', () => {
+      const data = "1347537248";
+      const result = solver(data);
+      expect(Array.isArray(result)).toBe(true);
+      result.forEach((ip: string) => {
+        expect(typeof ip).toBe('string');
+        const parts = ip.split('.');
+        expect(parts).toHaveLength(4);
+        parts.forEach((part: string) => {
+          const num = parseInt(part, 10);
+          expect(num).toBeGreaterThanOrEqual(0);
+          expect(num).toBeLessThanOrEqual(255);
+          expect(part).not.toMatch(/^0\d/); // No leading zeros
+        });
+      });
+    });
+
+    test('should handle example cases', () => {
+      const data1 = "25525511135";
+      const result1 = solver(data1);
+      expect(result1).toContain("255.255.11.135");
+      expect(result1).toContain("255.255.111.35");
+
+      const data2 = "1938718066";
+      const result2 = solver(data2);
+      expect(result2).toContain("193.87.180.66");
+    });
+
+    test('should handle invalid input', () => {
+      expect(solver("")).toEqual([]);
+      expect(solver("123")).toEqual([]);
+    });
+  });
+
+  describe('Proper 2-Coloring of a Graph', () => {
+    const solver = contractSolvers['Proper 2-Coloring of a Graph'];
+    
+    test('should return valid coloring when possible', () => {
+      const data = [9,[[1,6],[3,7],[1,7],[4,8],[1,5],[0,1],[3,8]]];
+      const result = solver(data);
+      expect(Array.isArray(result)).toBe(true);
+      
+      if (result.length > 0) {
+        expect(result).toHaveLength(9);
+        result.forEach((color: number) => {
+          expect([0, 1]).toContain(color);
+        });
+      }
+    });
+
+    test('should handle example cases', () => {
+      const data1 = [4, [[0, 2], [0, 3], [1, 2], [1, 3]]];
+      const result1 = solver(data1);
+      expect(result1).toEqual([0, 0, 1, 1]);
+
+      const data2 = [3, [[0, 1], [0, 2], [1, 2]]];
+      const result2 = solver(data2);
+      expect(result2).toEqual([]);
+    });
+
+    test('should handle invalid input', () => {
+      expect(solver([])).toEqual([]);
+      expect(solver([5])).toEqual([]);
+      expect(solver([3, 'invalid'])).toEqual([]);
+    });
+  });
+
+  describe('Find All Valid Math Expressions', () => {
+    const solver = contractSolvers['Find All Valid Math Expressions'];
+    
+    test('should find valid math expressions', () => {
+      const data = ["11626", 0];
+      const result = solver(data);
+      expect(Array.isArray(result)).toBe(true);
+      result.forEach((expr: string) => {
+        expect(typeof expr).toBe('string');
+        expect(expr).not.toMatch(/0\d/); // No leading zeros
+      });
+    });
+
+    test('should handle example cases', () => {
+      const data1 = ["123", 6];
+      const result1 = solver(data1);
+      expect(result1).toContain("1+2+3");
+      expect(result1).toContain("1*2*3");
+
+      const data2 = ["105", 5];
+      const result2 = solver(data2);
+      expect(result2).toContain("1*0+5");
+      expect(result2).toContain("10-5");
+    });
+
+    test('should handle invalid input', () => {
+      expect(solver([])).toEqual([]);
+      expect(solver(["123"])).toEqual([]);
+      expect(solver([123, 5])).toEqual([]);
+    });
+  });
+
+  describe('Compression I: RLE Compression', () => {
+    const solver = contractSolvers['Compression I: RLE Compression'];
+    
+    test('should compress string using RLE', () => {
+      const data = "6fffffffffffWNN44h777777777777OOOOOOOOddQMMPcccccccccccccc3aE44444444AAAAAAAAAA4OOHH";
+      const result = solver(data);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    test('should handle example cases', () => {
+      expect(solver("aaaaabccc")).toBe("5a1b3c");
+      expect(solver("aAaAaA")).toBe("1a1A1a1A1a1A");
+      expect(solver("111112333")).toBe("511233");
+    });
+
+    test('should handle long runs by splitting', () => {
+      const data = "zzzzzzzzzzzzzzzzzzz";
+      const result = solver(data);
+      expect(result).toMatch(/9z9z1z/);
+    });
+
+    test('should handle empty input', () => {
+      expect(solver("")).toBe("");
+    });
+  });
+
+  describe('Solver Registry Functions', () => {
+    test('getContractSolver should return correct solver', () => {
+      const solver = getContractSolver('Array Jumping Game');
+      expect(typeof solver).toBe('function');
+    });
+
+    test('getContractSolver should return null for unknown type', () => {
+      const solver = getContractSolver('Unknown Contract');
+      expect(solver).toBeNull();
+    });
+
+    test('hasContractSolver should return correct boolean', () => {
+      expect(hasContractSolver('Array Jumping Game')).toBe(true);
+      expect(hasContractSolver('Unknown Contract')).toBe(false);
+    });
+
+    test('contractSolvers should contain all expected types', () => {
+      const expectedTypes = [
+        'Encryption I: Caesar Cipher',
+        'Array Jumping Game',
+        'Find Largest Prime Factor',
+        'Subarray with Maximum Sum',
+        'Total Ways to Sum',
+        'Proper 2-Coloring of a Graph',
+        'Algorithmic Stock Trader III',
+        'Merge Overlapping Intervals',
+        'Generate IP Addresses',
+        'Find All Valid Math Expressions',
+        'Compression I: RLE Compression'
+      ];
+
+      expectedTypes.forEach(type => {
+        expect(contractSolvers[type]).toBeDefined();
+        expect(typeof contractSolvers[type]).toBe('function');
+      });
+    });
+  });
+});
