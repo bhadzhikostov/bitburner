@@ -131,6 +131,9 @@ declare global {
 
     // Logging and display
     clearLog(): void;
+    disableLog(functionName: string): void;
+    enableLog(functionName: string): void;
+    isLogEnabled(functionName: string): boolean;
     print(message: string): void;
     tprint(message: string): void;
     alert(message: string): void;
@@ -143,10 +146,11 @@ declare global {
     exists(filename: string, host?: string): boolean;
     fileExists(filename: string, host?: string): boolean;
     ls(host?: string, grep?: string): string[];
-    mv(filename: string, destination: string, host?: string): boolean;
-    cp(filename: string, destination: string, host?: string): boolean;
+    mv(host: string, source: string, destination: string): boolean;
+    cp(host: string, source: string, destination: string): boolean;
     scp(files: string | string[], destination: string, source?: string): boolean;
     copy(filename: string, destination: string, source?: string): boolean;
+    mkdir(dirname: string): boolean;
 
     // Server operations
     scan(host?: string): string[];

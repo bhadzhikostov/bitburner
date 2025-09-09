@@ -15,6 +15,16 @@ export async function main(ns: NS): Promise<void> {
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    await ns.hack(target);
+    const maxMoney = ns.getServerMaxMoney(target);
+    const currentMoney = ns.getServerMoneyAvailable(target);
+    const isAboveThreshold = currentMoney >= (maxMoney * 0.5);
+
+    if (maxMoney <= 0) break;
+
+    if (isAboveThreshold) {
+      await ns.hack(target);
+    } else {
+      await ns.sleep(1000);
+    }
   }
 }

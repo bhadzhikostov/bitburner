@@ -6,6 +6,33 @@
 import { ContractSolver, ContractSolverRegistry } from '../types/contracts';
 
 /**
+ * Encryption I: Caesar Cipher solver
+ */
+const solveCaesarCipher: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length !== 2) return '';
+
+  const [plaintext, shift] = data;
+  if (typeof plaintext !== 'string' || typeof shift !== 'number') return '';
+
+  const normalizedShift = ((shift % 26) + 26) % 26; // ensure 0..25
+
+  let result = '';
+  for (let i = 0; i < plaintext.length; i++) {
+    const ch = plaintext[i] as string;
+    const code = ch.toUpperCase().charCodeAt(0);
+    if (code >= 65 && code <= 90) {
+      // left shift
+      const shifted = ((code - 65 - normalizedShift + 26) % 26) + 65;
+      result += String.fromCharCode(shifted);
+    } else {
+      result += ch; // keep spaces and other chars
+    }
+  }
+
+  return result.toUpperCase();
+};
+
+/**
  * Array Jumping Game solver
  */
 const solveArrayJumpingGame: ContractSolver = (data: any): any => {
@@ -247,16 +274,177 @@ const solveProper2ColoringGraph: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Generate IP Addresses solver
+ */
+const solveGenerateIPAddresses: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string' || data.length === 0) return [];
+
+  const s = data.trim();
+  const results: string[] = [];
+
+  const isValidOctet = (str: string): boolean => {
+    if (str.length === 0 || str.length > 3) return false;
+    if (str[0] === '0' && str.length > 1) return false;
+    const num = Number(str);
+    return num >= 0 && num <= 255;
+  };
+
+  const backtrack = (start: number, parts: string[]): void => {
+    if (parts.length === 4) {
+      if (start === s.length) results.push(parts.join('.'));
+      return;
+    }
+
+    // remaining characters must be feasible for remaining parts
+    const remainingParts = 4 - parts.length;
+    const remainingChars = s.length - start;
+    if (remainingChars < remainingParts || remainingChars > remainingParts * 3) return;
+
+    for (let len = 1; len <= 3 && start + len <= s.length; len++) {
+      const segment = s.substring(start, start + len);
+      if (!isValidOctet(segment)) break; // longer will not be valid if leading zero or >255
+      parts.push(segment);
+      backtrack(start + len, parts);
+      parts.pop();
+    }
+  };
+
+  backtrack(0, []);
+  return results;
+};
+
+/**
+ * Find All Valid Math Expressions solver
+ */
+const solveFindAllValidMathExpressions: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length !== 2) return [];
+
+  const [digits, target] = data;
+  if (typeof digits !== 'string' || typeof target !== 'number') return [];
+
+  const results: string[] = [];
+
+  const isValidNumber = (str: string): boolean => {
+    if (str.length === 0) return false;
+    if (str.length > 1 && str[0] === '0') return false;
+    return true;
+  };
+
+  const evaluate = (expr: string): number => {
+    try {
+      // Simple evaluation respecting operator precedence
+      // Split by + and - first, then handle * within each part
+      const parts = expr.split(/([+-])/);
+      let result = 0;
+      let sign = 1;
+      
+      for (let i = 0; i < parts.length; i += 2) {
+        const part = parts[i]?.trim() || '';
+        if (part === '') continue;
+        
+        // Handle multiplication within this part
+        const multParts = part.split('*');
+        let multResult = 1;
+        for (const multPart of multParts) {
+          const num = Number(multPart.trim());
+          if (isNaN(num)) return NaN;
+          multResult *= num;
+        }
+        
+        result += sign * multResult;
+        
+        // Set sign for next part
+        if (i + 1 < parts.length) {
+          sign = parts[i + 1] === '+' ? 1 : -1;
+        }
+      }
+      
+      return result;
+    } catch {
+      return NaN;
+    }
+  };
+
+  const backtrack = (start: number, current: string): void => {
+    if (start === digits.length) {
+      if (isValidNumber(current) && evaluate(current) === target) {
+        results.push(current);
+      }
+      return;
+    }
+
+    const currentChar = digits[start];
+    if (currentChar === undefined) return;
+
+    // Add operator and next digit
+    if (current.length > 0) {
+      for (const op of ['+', '-', '*']) {
+        const nextNum = currentChar;
+        if (isValidNumber(nextNum)) {
+          backtrack(start + 1, current + op + nextNum);
+        }
+      }
+    }
+
+    // Add digit without operator (if current is empty or we're continuing a number)
+    const newCurrent = current + currentChar;
+    if (isValidNumber(newCurrent)) {
+      backtrack(start + 1, newCurrent);
+    }
+  };
+
+  backtrack(0, '');
+  return results;
+};
+
+/**
+ * Compression I: RLE Compression solver
+ */
+const solveRLECompression: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string' || data.length === 0) return '';
+
+  const input = data.trim();
+  let result = '';
+  let i = 0;
+
+  while (i < input.length) {
+    const char = input[i];
+    if (char === undefined) break;
+    
+    let count = 1;
+    // Count consecutive identical characters
+    while (i + count < input.length && input[i + count] === char) {
+      count++;
+    }
+
+    // Encode runs of 10 or more by splitting into multiple runs
+    while (count > 0) {
+      const runLength = Math.min(count, 9);
+      result += runLength.toString() + char;
+      count -= runLength;
+    }
+
+    i += count || 1;
+  }
+
+  return result;
+};
+
+/**
  * Registry of contract solvers
  */
 export const contractSolvers: ContractSolverRegistry = {
+  'Encryption I: Caesar Cipher': solveCaesarCipher,
   'Array Jumping Game': solveArrayJumpingGame,
   'Find Largest Prime Factor': solveFindLargestPrimeFactor,
   'Subarray with Maximum Sum': solveSubarrayWithMaximumSum,
   'Total Ways to Sum': solveTotalWaysToSum,
   'Proper 2-Coloring of a Graph': solveProper2ColoringGraph,
   'Algorithmic Stock Trader III': solveAlgorithmicStockTraderIII,
-  'Merge Overlapping Intervals': solveMergeOverlappingIntervals
+  'Merge Overlapping Intervals': solveMergeOverlappingIntervals,
+  'Generate IP Addresses': solveGenerateIPAddresses,
+  'Find All Valid Math Expressions': solveFindAllValidMathExpressions,
+  'Compression I: RLE Compression': solveRLECompression
 };
 
 /**
