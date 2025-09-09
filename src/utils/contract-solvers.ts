@@ -767,11 +767,7 @@ const solveHammingCodes: ContractSolver = (data: any): any => {
  *      from X positions back in the already produced UNCOMPRESSED output; if L==0, toggle.
  * Final chunk may be either type.
  *
- * We model each (i, phase) as a node and run Dijkstra to minimize encoded length.
- * Edges:
- *  - toggle: (i, phase) -> (i, phase^1), cost = 1, emit "0"
- *  - literal L: (i,0) -> (i+L,1), cost = 1 + L, emit `${L}${s.slice(i,i+L)}`
- *  - reference L,X: (i,1) -> (i+L,0), cost = 2, emit `${L}${X}`
+ * Uses exhaustive search with memoization to find optimal encoding.
  *
  * @param s Input string to encode.
  * @returns Minimal-length encoding.
@@ -780,150 +776,113 @@ const solveLZCompression: ContractSolver = (s: any): any => {
   const n = s.length;
   if (n === 0) return "";
 
-  // Node indexing helpers
-  const nodeId = (i: number, phase: 0 | 1): number => (i << 1) | phase;
-  const getIndex = (node: number): number => node >> 1;
-  const getPhase = (node: number): 0 | 1 => (node & 1) as 0 | 1;
-
-  const N = (n + 1) * 2;
-  const dist = new Array<number>(N).fill(Number.POSITIVE_INFINITY);
-  const seen = new Array<boolean>(N).fill(false);
-
-  type EdgeInfo =
-    | { kind: "toggle"; prev: number }
-    | { kind: "lit"; prev: number; L: number }
-    | { kind: "ref"; prev: number; L: number; X: number };
-
-  const parent: Array<EdgeInfo | null> = new Array<EdgeInfo | null>(N).fill(null);
-
-  // Tiny binary min-heap
-  type HeapItem = { node: number; d: number };
-  const heap: HeapItem[] = [];
-  const heapPush = (item: HeapItem) => {
-    heap.push(item);
-    let i = heap.length - 1;
-    while (i > 0) {
-      const p = (i - 1) >> 1;
-      if (heap[p]!.d <= heap[i]!.d) break;
-      [heap[p]!, heap[i]!] = [heap[i]!, heap[p]!];
-      i = p;
-    }
-  };
-  const heapPop = (): HeapItem | undefined => {
-    if (!heap.length) return;
-    const top = heap[0];
-    const last = heap.pop()!;
-    if (heap.length) {
-      heap[0] = last;
-      let i = 0;
-      while (true) {
-        let m = i, l = 2 * i + 1, r = l + 1;
-        if (l < heap.length && heap[l]!.d < heap[m]!.d) m = l;
-        if (r < heap.length && heap[r]!.d < heap[m]!.d) m = r;
-        if (m === i) break;
-        [heap[i]!, heap[m]!] = [heap[m]!, heap[i]!];
-        i = m;
-      }
-    }
-    return top;
+  // Use a more comprehensive approach that considers all possible sequences
+  // We'll use a priority queue to explore the most promising paths first
+  type State = {
+    pos: number;
+    phase: number;
+    cost: number;
+    encoding: string;
   };
 
-  const start = nodeId(0, 0);
-  dist[start] = 0;
-  heapPush({ node: start, d: 0 });
+  const visited = new Set<string>();
+  const queue: State[] = [];
+  
+  // Start with both possible phases
+  queue.push({ pos: 0, phase: 0, cost: 0, encoding: "" });
+  queue.push({ pos: 0, phase: 1, cost: 0, encoding: "" });
 
-  let target: number | null = null;
+  let bestResult: State | null = null;
 
-  // Dijkstra
-  while (true) {
-    const cur = heapPop();
-    if (!cur) break;
-    const u = cur.node;
-    if (seen[u]) continue;
-    seen[u] = true;
+  while (queue.length > 0) {
+    // Sort by cost to process most promising states first
+    queue.sort((a, b) => a.cost - b.cost);
+    const current = queue.shift()!;
 
-    const i = getIndex(u);
-    const phase = getPhase(u);
-
-    if (i === n) { // reached end of input
-      target = u;
-      break;
-    }
-
-    // 1) toggle (cost 1)
-    {
-      const v = nodeId(i, (phase ^ 1) as 0 | 1);
-      const w = 1;
-      if (dist[u]! + w < dist[v]!) {
-        dist[v] = dist[u]! + w;
-        parent[v] = { kind: "toggle", prev: u };
-        heapPush({ node: v, d: dist[v] });
+    if (current.pos === n) {
+      if (!bestResult || current.cost < bestResult.cost) {
+        bestResult = current;
       }
+      continue;
     }
 
-    if (phase === 0) {
-      // 2) literal L in [1..9], bounded by remaining length
-      const maxL = Math.min(9, n - i);
-      for (let L = 1; L <= maxL; L++) {
-        const v = nodeId(i + L, 1);
-        const w = 1 + L; // "L" + L chars
-        if (dist[u]! + w < dist[v]!) {
-          dist[v] = dist[u]! + w;
-          parent[v] = { kind: "lit", prev: u, L };
-          heapPush({ node: v, d: dist[v] });
-        }
+    const key = `${current.pos},${current.phase}`;
+    if (visited.has(key)) continue;
+    visited.add(key);
+
+    if (current.phase === 0) {
+      // Current phase is literal (Type 1)
+      // Option 1: Switch to reference phase
+      const switchState: State = {
+        pos: current.pos,
+        phase: 1,
+        cost: current.cost + 1,
+        encoding: current.encoding + "0"
+      };
+      queue.push(switchState);
+
+      // Option 2: Add literal chunk of length L (1-9)
+      for (let L = 1; L <= 9 && current.pos + L <= n; L++) {
+        const literalState: State = {
+          pos: current.pos + L,
+          phase: 1,
+          cost: current.cost + 1 + L,
+          encoding: current.encoding + L + s.substring(current.pos, current.pos + L)
+        };
+        queue.push(literalState);
       }
     } else {
-      // 3) reference: choose X ∈ [1..9], extend L while chars match
-      for (let X = 1; X <= 9; X++) {
-        const maxL = Math.min(9, n - i, i + X); // ensure i+L-X >= 0
+      // Current phase is reference (Type 2)
+      // Option 1: Switch to literal phase
+      const switchState: State = {
+        pos: current.pos,
+        phase: 0,
+        cost: current.cost + 1,
+        encoding: current.encoding + "0"
+      };
+      queue.push(switchState);
+
+      // Option 2: Add reference chunk
+      for (let X = 1; X <= 9 && X <= current.pos; X++) {
         let L = 0;
-        while (L < maxL && s[i + L] === s[i + L - X]) {
+        // Find maximum length that matches
+        while (L < 9 && current.pos + L < n && s[current.pos + L] === s[current.pos + L - X]) {
           L++;
-          const v = nodeId(i + L, 0);
-          const w = 2; // "L" + "X"
-          if (dist[u]! + w < dist[v]!) {
-            dist[v] = dist[u]! + w;
-            parent[v] = { kind: "ref", prev: u, L, X };
-            heapPush({ node: v, d: dist[v]! });
-          }
+        }
+
+        if (L > 0) {
+          const refState: State = {
+            pos: current.pos + L,
+            phase: 0,
+            cost: current.cost + 2,
+            encoding: current.encoding + L + X
+          };
+          queue.push(refState);
         }
       }
     }
   }
 
-  // Fallback: literal-only (shouldn't be needed if Dijkstra found a path)
-  if (target == null) {
-    let out = "";
-    let i = 0, phase: 0 | 1 = 0;
+  // If no valid solution found, fallback to literal-only encoding
+  if (!bestResult) {
+    let result = "";
+    let i = 0;
+    let phase = 0;
     while (i < n) {
-      if (phase === 1) { out += "0"; phase = 0; continue; }
+      if (phase === 1) {
+        result += "0";
+        phase = 0;
+        continue;
+      }
       const L = Math.min(9, n - i);
-      out += String(L) + s.slice(i, i + L);
-      i += L; phase = 1;
+      result += L + s.substring(i, i + L);
+      i += L;
+      phase = 1;
     }
-    return out;
+    return result;
   }
 
-  // Reconstruct encoding
-  const parts: string[] = [];
-  let v = target;
-  while (v !== start) {
-    const e = parent[v]!;
-    if (e.kind === "toggle") {
-      parts.push("0");
-      v = e.prev;
-    } else if (e.kind === "lit") {
-      const i0 = getIndex(e.prev);
-      parts.push(String(e.L) + s.slice(i0, i0 + e.L));
-      v = e.prev;
-    } else {
-      parts.push(String(e.L) + String(e.X));
-      v = e.prev;
-    }
-  }
-  parts.reverse();
-  return parts.join("");
+  return bestResult.encoding;
 }
 
 
