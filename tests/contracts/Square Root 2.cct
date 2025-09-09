@@ -1,0 +1,15 @@
+Square Root
+You are attempting to solve a Coding Contract. You have 9 tries remaining, after which the contract will self-destruct.
+
+
+You are given a ~200 digit BigInt. Find the square root of this number, to the nearest integer.
+
+The input is a BigInt value. The answer must be the string representing the solution's BigInt value. The trailing "n" is not part of the string.
+
+Hint: If you are having trouble, you might consult https://en.wikipedia.org/wiki/Methods_of_computing_square_roots
+
+Input number:
+76579161825613687329744221191804782919366028247465629706632956859963834911105657496036487475936435976512638051733913988598263851829798287346946864278000432117387513880019904597654677781166685913197257
+
+
+If your solution is an empty string, you must leave the text box empty. Do not use "", '', or ``.

@@ -496,36 +496,33 @@ export function solveTotalWaysToSumII(data: any[]): number {
 }
 
 /**
- * Solve Square Root for BigInt
+ * Computes the nearest integer square root of a large number.
+ * Accepts a BigInt or a decimal string and returns a decimal string.
+ * Rounds half-way cases down (change `<` to `<=` if you prefer “round half up”).
  */
-export function solveSquareRoot(data: any): string {
-  if (typeof data !== 'string' && typeof data !== 'bigint') return '0';
-  
-  const n = typeof data === 'string' ? BigInt(data) : data;
-  if (n < 0n) return '0';
-  if (n === 0n) return '0';
-  if (n === 1n) return '1';
-  
-  // Use binary search to find square root
-  let left = 0n;
-  let right = n;
-  let result = 0n;
-  
-  while (left <= right) {
-    const mid = (left + right) / 2n;
-    const square = mid * mid;
-    
-    if (square === n) {
-      return mid.toString();
-    } else if (square < n) {
-      result = mid;
-      left = mid + 1n;
-    } else {
-      right = mid - 1n;
-    }
+export function solveSquareRoot(n: any): string {
+  // Convert to BigInt if needed
+  n = typeof n === 'bigint' ? n : BigInt(n);
+  if (n < 0n) throw new RangeError('sqrtBigIntNearest: negative input');
+  if (n < 2n) return n.toString(); // 0n or 1n
+
+  // Initial guess: 2^(ceil(bitLength/2)) — ensures convergence
+  const bitLen = n.toString(2).length;
+  let x = 1n << BigInt(Math.ceil(bitLen / 2));
+
+  // Newton–Raphson (Heron’s method) iteration to find floor(sqrt(n))
+  while (true) {
+    const y = (x + n / x) >> 1n;
+    if (y >= x) break;
+    x = y;
   }
-  
-  return result.toString();
+
+  // At this point, x is floor(sqrt(n)); check which is nearer
+  const d1 = n - x * x;
+  const xPlusOne = x + 1n;
+  const d2 = xPlusOne * xPlusOne - n;
+  // If (n – x^2) < ((x+1)^2 – n), return x; otherwise round up
+  return (d2 < d1 ? xPlusOne : x).toString();
 }
 
 /**
@@ -600,3 +597,4 @@ export function solveAlgorithmicStockTraderIV(data: any[]): number {
 export function getSupportedContractTypes(): string[] {
   return Object.keys(contractSolvers);
 }
+
