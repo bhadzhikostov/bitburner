@@ -439,6 +439,191 @@ const solveRLECompression: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Shortest Path in a Grid solver
+ */
+const solveShortestPathInGrid: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length === 0) return '';
+
+  const grid = data;
+  const rows = grid.length;
+  const cols = grid[0]?.length || 0;
+  
+  if (rows === 0 || cols === 0) return '';
+  if (grid[0]?.[0] === 1 || grid[rows - 1]?.[cols - 1] === 1) return '';
+
+  // BFS to find shortest path
+  const queue: Array<{row: number, col: number, path: string}> = [];
+  const visited = new Set<string>();
+  
+  queue.push({row: 0, col: 0, path: ''});
+  visited.add('0,0');
+
+  const directions = [
+    {dr: -1, dc: 0, dir: 'U'},
+    {dr: 1, dc: 0, dir: 'D'},
+    {dr: 0, dc: -1, dir: 'L'},
+    {dr: 0, dc: 1, dir: 'R'}
+  ];
+
+  while (queue.length > 0) {
+    const {row, col, path} = queue.shift()!;
+    
+    if (row === rows - 1 && col === cols - 1) {
+      return path;
+    }
+
+    for (const {dr, dc, dir} of directions) {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      const key = `${newRow},${newCol}`;
+      
+      if (newRow >= 0 && newRow < rows && 
+          newCol >= 0 && newCol < cols &&
+          !visited.has(key) &&
+          grid[newRow]?.[newCol] === 0) {
+        visited.add(key);
+        queue.push({row: newRow, col: newCol, path: path + dir});
+      }
+    }
+  }
+
+  return ''; // No path found
+};
+
+/**
+ * Spiralize Matrix solver
+ */
+const solveSpiralizeMatrix: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length === 0) return [];
+
+  const matrix = data;
+  const result: number[] = [];
+  let top = 0;
+  let bottom = matrix.length - 1;
+  let left = 0;
+  let right = matrix[0]?.length - 1 || 0;
+
+  while (top <= bottom && left <= right) {
+    // Traverse right
+    for (let col = left; col <= right; col++) {
+      const value = matrix[top]?.[col];
+      if (typeof value === 'number') {
+        result.push(value);
+      }
+    }
+    top++;
+
+    // Traverse down
+    for (let row = top; row <= bottom; row++) {
+      const value = matrix[row]?.[right];
+      if (typeof value === 'number') {
+        result.push(value);
+      }
+    }
+    right--;
+
+    // Traverse left (if we still have rows)
+    if (top <= bottom) {
+      for (let col = right; col >= left; col--) {
+        const value = matrix[bottom]?.[col];
+        if (typeof value === 'number') {
+          result.push(value);
+        }
+      }
+      bottom--;
+    }
+
+    // Traverse up (if we still have columns)
+    if (left <= right) {
+      for (let row = bottom; row >= top; row--) {
+        const value = matrix[row]?.[left];
+        if (typeof value === 'number') {
+          result.push(value);
+        }
+      }
+      left++;
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Unique Paths in a Grid II solver
+ */
+const solveUniquePathsInGridII: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length === 0) return 0;
+
+  const grid = data;
+  const rows = grid.length;
+  const cols = grid[0]?.length || 0;
+  
+  if (rows === 0 || cols === 0) return 0;
+  if (grid[0]?.[0] === 1 || grid[rows - 1]?.[cols - 1] === 1) return 0;
+
+  // Create DP table
+  const dp: number[][] = Array(rows).fill(null).map(() => Array(cols).fill(0));
+  
+  // Initialize starting position
+  dp[0]![0] = 1;
+  
+  // Fill first row
+  for (let col = 1; col < cols; col++) {
+    if (grid[0]?.[col] === 0) {
+      dp[0]![col] = dp[0]![col - 1] || 0;
+    }
+  }
+  
+  // Fill first column
+  for (let row = 1; row < rows; row++) {
+    if (grid[row]?.[0] === 0) {
+      dp[row]![0] = dp[row - 1]![0] || 0;
+    }
+  }
+  
+  // Fill rest of the table
+  for (let row = 1; row < rows; row++) {
+    for (let col = 1; col < cols; col++) {
+      if (grid[row]?.[col] === 0) {
+        dp[row]![col] = (dp[row - 1]![col] || 0) + (dp[row]![col - 1] || 0);
+      }
+    }
+  }
+  
+  return dp[rows - 1]?.[cols - 1] || 0;
+};
+
+/**
+ * Minimum Path Sum in a Triangle solver
+ */
+const solveMinimumPathSumInTriangle: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length === 0) return 0;
+
+  const triangle = data;
+  const n = triangle.length;
+  
+  if (n === 0) return 0;
+  if (n === 1) return triangle[0]?.[0] || 0;
+
+  // Start from the second-to-last row and work upwards
+  for (let row = n - 2; row >= 0; row--) {
+    for (let col = 0; col <= row; col++) {
+      const current = triangle[row]?.[col];
+      const left = triangle[row + 1]?.[col];
+      const right = triangle[row + 1]?.[col + 1];
+      
+      if (typeof current === 'number' && 
+          typeof left === 'number' && 
+          typeof right === 'number') {
+        triangle[row][col] = current + Math.min(left, right);
+      }
+    }
+  }
+
+  return triangle[0]?.[0] || 0;
+};
+
+/**
  * Registry of contract solvers
  */
 export const contractSolvers: ContractSolverRegistry = {
@@ -456,7 +641,11 @@ export const contractSolvers: ContractSolverRegistry = {
   'Total Ways to Sum II': solveTotalWaysToSumII,
   'Square Root': solveSquareRoot,
   'Array Jumping Game II': solveArrayJumpingGameII,
-  'Algorithmic Stock Trader IV': solveAlgorithmicStockTraderIV
+  'Algorithmic Stock Trader IV': solveAlgorithmicStockTraderIV,
+  'Shortest Path in a Grid': solveShortestPathInGrid,
+  'Spiralize Matrix': solveSpiralizeMatrix,
+  'Unique Paths in a Grid II': solveUniquePathsInGridII,
+  'Minimum Path Sum in a Triangle': solveMinimumPathSumInTriangle
 };
 
 /**
