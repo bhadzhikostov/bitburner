@@ -756,88 +756,178 @@ const solveHammingCodes: ContractSolver = (data: any): any => {
   return result.join('');
 };
 
+
 /**
- * Compression III: LZ Compression solver
+ * LZ variant (Bitburner "Compression III") minimal encoder.
+ *
+ * Chunks alternate types starting with Type 1 (literal).
+ * Each chunk starts with a single ASCII digit L (0..9):
+ *  - Type 1 (literal): if L>0, output digit L + L literal chars; if L==0, toggle to Type 2.
+ *  - Type 2 (reference): if L>0, output digit L + digit X (1..9), meaning copy L chars
+ *      from X positions back in the already produced UNCOMPRESSED output; if L==0, toggle.
+ * Final chunk may be either type.
+ *
+ * We model each (i, phase) as a node and run Dijkstra to minimize encoded length.
+ * Edges:
+ *  - toggle: (i, phase) -> (i, phase^1), cost = 1, emit "0"
+ *  - literal L: (i,0) -> (i+L,1), cost = 1 + L, emit `${L}${s.slice(i,i+L)}`
+ *  - reference L,X: (i,1) -> (i+L,0), cost = 2, emit `${L}${X}`
+ *
+ * @param s Input string to encode.
+ * @returns Minimal-length encoding.
  */
-const solveLZCompression: ContractSolver = (data: any): any => {
-  if (typeof data !== 'string' || data.length === 0) return '';
+const solveLZCompression: ContractSolver = (s: any): any => {
+  const n = s.length;
+  if (n === 0) return "";
 
-  const input = data;
-  let result = '';
-  let i = 0;
-  let isType1 = true; // Start with type 1 (direct copy)
+  // Node indexing helpers
+  const nodeId = (i: number, phase: 0 | 1): number => (i << 1) | phase;
+  const getIndex = (node: number): number => node >> 1;
+  const getPhase = (node: number): 0 | 1 => (node & 1) as 0 | 1;
 
-  while (i < input.length) {
-    if (isType1) {
-      // Type 1: Direct copy
-      // Find the maximum length we can copy directly
-      let maxLength = 0;
-      
-      for (let len = 1; len <= Math.min(9, input.length - i); len++) {
-        // Check if we can reference this length
-        let canReference = false;
-        for (let offset = 1; offset <= Math.min(i, 9); offset++) {
-          let matchLength = 0;
-          while (matchLength < len && 
-                 i + matchLength < input.length && 
-                 input[i + matchLength] === input[i - offset + matchLength]) {
-            matchLength++;
-          }
-          if (matchLength >= len) {
-            canReference = true;
-            break;
-          }
-        }
-        
-        if (!canReference) {
-          maxLength = len;
-        } else {
-          // We can reference this length, so we should use reference instead
-          break;
-        }
-      }
-      
-      if (maxLength > 0) {
-        result += maxLength.toString() + input.substring(i, i + maxLength);
-        i += maxLength;
-      } else {
-        // No direct copy possible, switch to type 2
-        result += '0';
-      }
-    } else {
-      // Type 2: Reference to earlier data
-      let bestLength = 0;
-      let bestOffset = 0;
-      
-      // Look for the longest match in the previous data
-      for (let offset = 1; offset <= Math.min(i, 9); offset++) {
-        let matchLength = 0;
-        while (matchLength < 9 && 
-               i + matchLength < input.length && 
-               input[i + matchLength] === input[i - offset + matchLength]) {
-          matchLength++;
-        }
-        
-        if (matchLength > bestLength) {
-          bestLength = matchLength;
-          bestOffset = offset;
-        }
-      }
-      
-      if (bestLength > 0) {
-        result += bestLength.toString() + bestOffset.toString();
-        i += bestLength;
-      } else {
-        // No match found, use length 0 to switch back to type 1
-        result += '0';
+  const N = (n + 1) * 2;
+  const dist = new Array<number>(N).fill(Number.POSITIVE_INFINITY);
+  const seen = new Array<boolean>(N).fill(false);
+
+  type EdgeInfo =
+    | { kind: "toggle"; prev: number }
+    | { kind: "lit"; prev: number; L: number }
+    | { kind: "ref"; prev: number; L: number; X: number };
+
+  const parent: Array<EdgeInfo | null> = new Array<EdgeInfo | null>(N).fill(null);
+
+  // Tiny binary min-heap
+  type HeapItem = { node: number; d: number };
+  const heap: HeapItem[] = [];
+  const heapPush = (item: HeapItem) => {
+    heap.push(item);
+    let i = heap.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (heap[p]!.d <= heap[i]!.d) break;
+      [heap[p]!, heap[i]!] = [heap[i]!, heap[p]!];
+      i = p;
+    }
+  };
+  const heapPop = (): HeapItem | undefined => {
+    if (!heap.length) return;
+    const top = heap[0];
+    const last = heap.pop()!;
+    if (heap.length) {
+      heap[0] = last;
+      let i = 0;
+      while (true) {
+        let m = i, l = 2 * i + 1, r = l + 1;
+        if (l < heap.length && heap[l]!.d < heap[m]!.d) m = l;
+        if (r < heap.length && heap[r]!.d < heap[m]!.d) m = r;
+        if (m === i) break;
+        [heap[i]!, heap[m]!] = [heap[m]!, heap[i]!];
+        i = m;
       }
     }
-    
-    isType1 = !isType1;
+    return top;
+  };
+
+  const start = nodeId(0, 0);
+  dist[start] = 0;
+  heapPush({ node: start, d: 0 });
+
+  let target: number | null = null;
+
+  // Dijkstra
+  while (true) {
+    const cur = heapPop();
+    if (!cur) break;
+    const u = cur.node;
+    if (seen[u]) continue;
+    seen[u] = true;
+
+    const i = getIndex(u);
+    const phase = getPhase(u);
+
+    if (i === n) { // reached end of input
+      target = u;
+      break;
+    }
+
+    // 1) toggle (cost 1)
+    {
+      const v = nodeId(i, (phase ^ 1) as 0 | 1);
+      const w = 1;
+      if (dist[u]! + w < dist[v]!) {
+        dist[v] = dist[u]! + w;
+        parent[v] = { kind: "toggle", prev: u };
+        heapPush({ node: v, d: dist[v] });
+      }
+    }
+
+    if (phase === 0) {
+      // 2) literal L in [1..9], bounded by remaining length
+      const maxL = Math.min(9, n - i);
+      for (let L = 1; L <= maxL; L++) {
+        const v = nodeId(i + L, 1);
+        const w = 1 + L; // "L" + L chars
+        if (dist[u]! + w < dist[v]!) {
+          dist[v] = dist[u]! + w;
+          parent[v] = { kind: "lit", prev: u, L };
+          heapPush({ node: v, d: dist[v] });
+        }
+      }
+    } else {
+      // 3) reference: choose X ∈ [1..9], extend L while chars match
+      for (let X = 1; X <= 9; X++) {
+        const maxL = Math.min(9, n - i, i + X); // ensure i+L-X >= 0
+        let L = 0;
+        while (L < maxL && s[i + L] === s[i + L - X]) {
+          L++;
+          const v = nodeId(i + L, 0);
+          const w = 2; // "L" + "X"
+          if (dist[u]! + w < dist[v]!) {
+            dist[v] = dist[u]! + w;
+            parent[v] = { kind: "ref", prev: u, L, X };
+            heapPush({ node: v, d: dist[v]! });
+          }
+        }
+      }
+    }
   }
 
-  return result;
-};
+  // Fallback: literal-only (shouldn't be needed if Dijkstra found a path)
+  if (target == null) {
+    let out = "";
+    let i = 0, phase: 0 | 1 = 0;
+    while (i < n) {
+      if (phase === 1) { out += "0"; phase = 0; continue; }
+      const L = Math.min(9, n - i);
+      out += String(L) + s.slice(i, i + L);
+      i += L; phase = 1;
+    }
+    return out;
+  }
+
+  // Reconstruct encoding
+  const parts: string[] = [];
+  let v = target;
+  while (v !== start) {
+    const e = parent[v]!;
+    if (e.kind === "toggle") {
+      parts.push("0");
+      v = e.prev;
+    } else if (e.kind === "lit") {
+      const i0 = getIndex(e.prev);
+      parts.push(String(e.L) + s.slice(i0, i0 + e.L));
+      v = e.prev;
+    } else {
+      parts.push(String(e.L) + String(e.X));
+      v = e.prev;
+    }
+  }
+  parts.reverse();
+  return parts.join("");
+}
+
+
+
 
 /**
  * Compression II: LZ Decompression solver
