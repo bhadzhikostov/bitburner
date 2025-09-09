@@ -132,7 +132,7 @@ export function formatContractData(data: any): string {
  * Check if a contract is worth attempting based on remaining tries
  */
 export function isContractWorthAttempting(contract: CodingContract): boolean {
-  return contract.numTries < contract.maxTries;
+  return contract.numTries > 0;
 }
 
 /**

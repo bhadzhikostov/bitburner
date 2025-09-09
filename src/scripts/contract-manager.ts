@@ -255,12 +255,11 @@ class ContractManager {
       log(this.ns, `Generated solution: ${formatContractData(solution)}`, 'INFO');
 
       const result = attemptContract(this.ns, hostname, filename, solution);
-
       if (result.success) {
-        log(this.ns, `Successfully solved contract ${filename}!`, 'INFO');
+        this.ns.tprint(`SUCCESS: Solved contract ${filename}!`);
         this.stats.totalSolved += 1;
       } else {
-        log(this.ns, `Failed to solve contract ${filename}`, 'WARN');
+        this.ns.tprint(`WARN: Failed to solve contract ${filename}`);
         this.stats.totalFailed += 1;
       }
 

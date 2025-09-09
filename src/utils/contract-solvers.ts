@@ -365,9 +365,14 @@ const solveFindAllValidMathExpressions: ContractSolver = (data: any): any => {
     }
   };
 
+  const hasLeadingZeros = (expr: string): boolean => {
+    const numbers = expr.split(/[+\-*]/);
+    return numbers.some(num => num.length > 1 && num[0] === '0');
+  };
+
   const backtrack = (start: number, current: string): void => {
     if (start === digits.length) {
-      if (isValidNumber(current) && evaluate(current) === target) {
+      if (isValidNumber(current) && !hasLeadingZeros(current) && evaluate(current) === target) {
         results.push(current);
       }
       return;
@@ -379,16 +384,17 @@ const solveFindAllValidMathExpressions: ContractSolver = (data: any): any => {
     // Add operator and next digit
     if (current.length > 0) {
       for (const op of ['+', '-', '*']) {
-        const nextNum = currentChar;
-        if (isValidNumber(nextNum)) {
-          backtrack(start + 1, current + op + nextNum);
+        const nextExpression = current + op + currentChar;
+        // Check if the new expression would be valid by ensuring no leading zeros
+        if (!hasLeadingZeros(nextExpression)) {
+          backtrack(start + 1, nextExpression);
         }
       }
     }
 
     // Add digit without operator (if current is empty or we're continuing a number)
     const newCurrent = current + currentChar;
-    if (isValidNumber(newCurrent)) {
+    if (isValidNumber(newCurrent) && !hasLeadingZeros(newCurrent)) {
       backtrack(start + 1, newCurrent);
     }
   };
@@ -446,7 +452,11 @@ export const contractSolvers: ContractSolverRegistry = {
   'Merge Overlapping Intervals': solveMergeOverlappingIntervals,
   'Generate IP Addresses': solveGenerateIPAddresses,
   'Find All Valid Math Expressions': solveFindAllValidMathExpressions,
-  'Compression I: RLE Compression': solveRLECompression
+  'Compression I: RLE Compression': solveRLECompression,
+  'Total Ways to Sum II': solveTotalWaysToSumII,
+  'Square Root': solveSquareRoot,
+  'Array Jumping Game II': solveArrayJumpingGameII,
+  'Algorithmic Stock Trader IV': solveAlgorithmicStockTraderIV
 };
 
 /**
@@ -464,9 +474,129 @@ export function hasContractSolver(contractType: string): boolean {
 }
 
 /**
+ * Solve Total Ways to Sum II - unbounded knapsack problem
+ */
+export function solveTotalWaysToSumII(data: any[]): number {
+  if (!Array.isArray(data) || data.length !== 2) return 0;
+  
+  const [target, numbers] = data;
+  if (typeof target !== 'number' || !Array.isArray(numbers)) return 0;
+  
+  // Use dynamic programming to count ways
+  const dp = new Array(target + 1).fill(0);
+  dp[0] = 1; // One way to make sum 0 (use no numbers)
+  
+  for (const num of numbers) {
+    for (let i = num; i <= target; i++) {
+      dp[i] += dp[i - num];
+    }
+  }
+  
+  return dp[target];
+}
+
+/**
+ * Solve Square Root for BigInt
+ */
+export function solveSquareRoot(data: any): string {
+  if (typeof data !== 'string' && typeof data !== 'bigint') return '0';
+  
+  const n = typeof data === 'string' ? BigInt(data) : data;
+  if (n < 0n) return '0';
+  if (n === 0n) return '0';
+  if (n === 1n) return '1';
+  
+  // Use binary search to find square root
+  let left = 0n;
+  let right = n;
+  let result = 0n;
+  
+  while (left <= right) {
+    const mid = (left + right) / 2n;
+    const square = mid * mid;
+    
+    if (square === n) {
+      return mid.toString();
+    } else if (square < n) {
+      result = mid;
+      left = mid + 1n;
+    } else {
+      right = mid - 1n;
+    }
+  }
+  
+  return result.toString();
+}
+
+/**
+ * Solve Array Jumping Game II - minimum jumps
+ */
+export function solveArrayJumpingGameII(data: any[]): number {
+  if (!Array.isArray(data)) return 0;
+  
+  const nums = data;
+  if (nums.length === 0) return 0;
+  if (nums.length === 1) return 0;
+  
+  let jumps = 0;
+  let currentEnd = 0;
+  let farthest = 0;
+  
+  for (let i = 0; i < nums.length - 1; i++) {
+    farthest = Math.max(farthest, i + nums[i]);
+    
+    if (i === currentEnd) {
+      jumps++;
+      currentEnd = farthest;
+      
+      if (currentEnd >= nums.length - 1) {
+        return jumps;
+      }
+    }
+  }
+  
+  return 0; // Cannot reach the end
+}
+
+/**
+ * Solve Algorithmic Stock Trader IV - k transactions
+ */
+export function solveAlgorithmicStockTraderIV(data: any[]): number {
+  if (!Array.isArray(data) || data.length !== 2) return 0;
+  
+  const [k, prices] = data;
+  if (typeof k !== 'number' || !Array.isArray(prices)) return 0;
+  
+  if (prices.length < 2) return 0;
+  
+  // If k is greater than or equal to half the length, we can make unlimited transactions
+  if (k >= Math.floor(prices.length / 2)) {
+    let profit = 0;
+    for (let i = 1; i < prices.length; i++) {
+      if (prices[i] > prices[i - 1]) {
+        profit += prices[i] - prices[i - 1];
+      }
+    }
+    return profit;
+  }
+  
+  // Dynamic programming approach for limited transactions
+  const buy = new Array(k + 1).fill(-Infinity);
+  const sell = new Array(k + 1).fill(0);
+  
+  for (const price of prices) {
+    for (let i = k; i >= 1; i--) {
+      sell[i] = Math.max(sell[i], buy[i] + price);
+      buy[i] = Math.max(buy[i], sell[i - 1] - price);
+    }
+  }
+  
+  return sell[k];
+}
+
+/**
  * Get list of supported contract types
  */
 export function getSupportedContractTypes(): string[] {
   return Object.keys(contractSolvers);
 }
-// (removed duplicate definition)
