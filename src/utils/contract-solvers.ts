@@ -756,6 +756,147 @@ const solveHammingCodes: ContractSolver = (data: any): any => {
   return result.join('');
 };
 
+/**
+ * HammingCodes Encoded Binary to Integer solver
+ */
+const solveHammingCodesDecode: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string' || !/^[01]+$/.test(data)) return 0;
+
+  const encoded = data;
+  const n = encoded.length;
+  
+  if (n === 0) return 0;
+  
+  // Convert string to array of bits
+  const bits = encoded.split('').map(bit => parseInt(bit, 10));
+  
+  // Find the error position using parity checks
+  let errorPos = 0;
+  
+  // Check parity bits at positions 2^0, 2^1, 2^2, etc.
+  for (let p = 0; Math.pow(2, p) < n; p++) {
+    const pos = Math.pow(2, p);
+    let parity = 0;
+    
+    // Check every 2^p bits starting from position 2^p
+    for (let i = pos; i < n; i += pos * 2) {
+      for (let j = 0; j < pos && i + j < n; j++) {
+        parity ^= bits[i + j] || 0;
+      }
+    }
+    
+    if (parity !== 0) {
+      errorPos += pos;
+    }
+  }
+  
+  // Check overall parity (position 0)
+  let overallParity = 0;
+  for (let i = 0; i < n; i++) {
+    overallParity ^= bits[i] || 0;
+  }
+  
+  // If there's an error, fix it
+  if (errorPos > 0 && errorPos < n) {
+    bits[errorPos] = 1 - (bits[errorPos] || 0);
+  }
+  
+  // Extract data bits (skip parity bit positions)
+  const dataBits: number[] = [];
+  for (let i = 1; i < n; i++) {
+    if ((i & (i - 1)) !== 0) { // Not a power of 2
+      dataBits.push(bits[i] || 0);
+    }
+  }
+  
+  // Convert binary to decimal
+  if (dataBits.length === 0) return 0;
+  
+  let result = 0;
+  for (let i = 0; i < dataBits.length; i++) {
+    result = result * 2 + (dataBits[i] || 0);
+  }
+  
+  return result;
+};
+
+/**
+ * Sanitize Parentheses in Expression solver
+ */
+const solveSanitizeParentheses: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string') return [''];
+
+  const s = data;
+  const result: string[] = [];
+  const visited = new Set<string>();
+  const queue: string[] = [s];
+  let found = false;
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    
+    if (visited.has(current)) continue;
+    visited.add(current);
+
+    if (isValidParentheses(current)) {
+      result.push(current);
+      found = true;
+    }
+
+    // If we found valid strings at this level, don't go deeper
+    if (found) continue;
+
+    // Try removing one character at a time
+    for (let i = 0; i < current.length; i++) {
+      if (current[i] === '(' || current[i] === ')') {
+        const next = current.substring(0, i) + current.substring(i + 1);
+        if (!visited.has(next)) {
+          queue.push(next);
+        }
+      }
+    }
+  }
+
+  return result.length > 0 ? result : [''];
+};
+
+function isValidParentheses(s: string): boolean {
+  let count = 0;
+  for (const char of s) {
+    if (char === '(') {
+      count++;
+    } else if (char === ')') {
+      count--;
+      if (count < 0) return false;
+    }
+  }
+  return count === 0;
+}
+
+/**
+ * Algorithmic Stock Trader II solver (unlimited transactions)
+ */
+const solveAlgorithmicStockTraderII: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length < 2) return 0;
+
+  const prices = data.filter((price: any) => typeof price === 'number');
+  if (prices.length < 2) return 0;
+
+  let maxProfit = 0;
+  
+  // Buy and sell on every profitable day
+  for (let i = 1; i < prices.length; i++) {
+    const currentPrice = prices[i] || 0;
+    const previousPrice = prices[i - 1] || 0;
+    
+    if (currentPrice > previousPrice) {
+      maxProfit += currentPrice - previousPrice;
+    }
+  }
+
+  return maxProfit;
+};
+
 
 /**
  * LZ variant (Bitburner "Compression III") minimal encoder.
@@ -984,7 +1125,10 @@ export const contractSolvers: ContractSolverRegistry = {
   'Minimum Path Sum in a Triangle': solveMinimumPathSumInTriangle,
   'Encryption II: Vigenère Cipher': solveVigenereCipher,
   'Algorithmic Stock Trader I': solveAlgorithmicStockTraderI,
+  'Algorithmic Stock Trader II': solveAlgorithmicStockTraderII,
   'HammingCodes: Integer to Encoded Binary': solveHammingCodes,
+  'HammingCodes: Encoded Binary to Integer': solveHammingCodesDecode,
+  'Sanitize Parentheses in Expression': solveSanitizeParentheses,
   'Compression III: LZ Compression': solveLZCompression,
   'Compression II: LZ Decompression': solveLZDecompression,
   'Unique Paths in a Grid I': solveUniquePathsInGridI
