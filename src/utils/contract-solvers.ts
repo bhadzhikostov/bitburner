@@ -624,6 +624,293 @@ const solveMinimumPathSumInTriangle: ContractSolver = (data: any): any => {
 };
 
 /**
+ * Encryption II: Vigenère Cipher solver
+ */
+const solveVigenereCipher: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length !== 2) return '';
+
+  const [plaintext, keyword] = data;
+  if (typeof plaintext !== 'string' || typeof keyword !== 'string') return '';
+
+  const upperPlaintext = plaintext.toUpperCase();
+  const upperKeyword = keyword.toUpperCase();
+  
+  // If keyword is empty, return original text
+  if (upperKeyword.length === 0) return upperPlaintext;
+  
+  let result = '';
+  let keyIndex = 0;
+
+  for (let i = 0; i < upperPlaintext.length; i++) {
+    const char = upperPlaintext[i];
+    if (char === undefined) break;
+    
+    if (char >= 'A' && char <= 'Z') {
+      const keyChar = upperKeyword[keyIndex % upperKeyword.length];
+      if (keyChar === undefined) break;
+      
+      // Vigenère encryption: (plaintext + key) mod 26
+      const plainCode = char.charCodeAt(0) - 65; // A=0, B=1, etc.
+      const keyCode = keyChar.charCodeAt(0) - 65;
+      const cipherCode = (plainCode + keyCode) % 26;
+      
+      result += String.fromCharCode(cipherCode + 65);
+      keyIndex++;
+    } else {
+      result += char; // Keep non-alphabetic characters
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Algorithmic Stock Trader I solver (single transaction)
+ */
+const solveAlgorithmicStockTraderI: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length < 2) return 0;
+
+  const prices = data.filter((price: any) => typeof price === 'number');
+  if (prices.length < 2) return 0;
+
+  let maxProfit = 0;
+  let minPrice = prices[0] || 0;
+
+  for (let i = 1; i < prices.length; i++) {
+    const currentPrice = prices[i] || 0;
+    const profit = currentPrice - minPrice;
+    maxProfit = Math.max(maxProfit, profit);
+    minPrice = Math.min(minPrice, currentPrice);
+  }
+
+  return maxProfit;
+};
+
+/**
+ * HammingCodes Integer to Encoded Binary solver
+ */
+const solveHammingCodes: ContractSolver = (data: any): any => {
+  if (typeof data !== 'number' && typeof data !== 'string') return '';
+
+  // Convert to binary string
+  let binary: string;
+  if (typeof data === 'string') {
+    // If it's already a binary string, use it directly
+    if (/^[01]+$/.test(data)) {
+      binary = data;
+    } else {
+      // If it's a decimal string, convert to binary
+      const num = parseInt(data, 10);
+      if (isNaN(num)) return '';
+      binary = num.toString(2);
+    }
+  } else {
+    binary = data.toString(2);
+  }
+  
+  // Remove leading zeros
+  binary = binary.replace(/^0+/, '') || '0';
+  
+  const dataBits = binary.split('').map(bit => parseInt(bit, 10));
+  const n = dataBits.length;
+  
+  // Calculate number of parity bits needed
+  let parityBits = 0;
+  while (Math.pow(2, parityBits) < n + parityBits + 1) {
+    parityBits++;
+  }
+  
+  const totalBits = n + parityBits + 1; // +1 for position 0
+  const result = new Array(totalBits).fill(0);
+  
+  // Place data bits in non-power-of-2 positions
+  let dataIndex = 0;
+  for (let i = 1; i < totalBits; i++) {
+    if ((i & (i - 1)) !== 0) { // Not a power of 2
+      result[i] = dataBits[dataIndex] || 0;
+      dataIndex++;
+    }
+  }
+  
+  // Calculate parity bits
+  for (let p = 0; p < parityBits; p++) {
+    const pos = Math.pow(2, p);
+    let parity = 0;
+    
+    for (let i = pos; i < totalBits; i += pos * 2) {
+      for (let j = 0; j < pos && i + j < totalBits; j++) {
+        parity ^= result[i + j] || 0;
+      }
+    }
+    
+    result[pos] = parity;
+  }
+  
+  // Calculate position 0 parity bit
+  let parity0 = 0;
+  for (let i = 1; i < totalBits; i++) {
+    parity0 ^= result[i] || 0;
+  }
+  result[0] = parity0;
+  
+  return result.join('');
+};
+
+/**
+ * Compression III: LZ Compression solver
+ */
+const solveLZCompression: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string' || data.length === 0) return '';
+
+  const input = data;
+  let result = '';
+  let i = 0;
+  let isType1 = true; // Start with type 1 (direct copy)
+
+  while (i < input.length) {
+    if (isType1) {
+      // Type 1: Direct copy
+      // Find the maximum length we can copy directly
+      let maxLength = 0;
+      
+      for (let len = 1; len <= Math.min(9, input.length - i); len++) {
+        // Check if we can reference this length
+        let canReference = false;
+        for (let offset = 1; offset <= Math.min(i, 9); offset++) {
+          let matchLength = 0;
+          while (matchLength < len && 
+                 i + matchLength < input.length && 
+                 input[i + matchLength] === input[i - offset + matchLength]) {
+            matchLength++;
+          }
+          if (matchLength >= len) {
+            canReference = true;
+            break;
+          }
+        }
+        
+        if (!canReference) {
+          maxLength = len;
+        } else {
+          // We can reference this length, so we should use reference instead
+          break;
+        }
+      }
+      
+      if (maxLength > 0) {
+        result += maxLength.toString() + input.substring(i, i + maxLength);
+        i += maxLength;
+      } else {
+        // No direct copy possible, switch to type 2
+        result += '0';
+      }
+    } else {
+      // Type 2: Reference to earlier data
+      let bestLength = 0;
+      let bestOffset = 0;
+      
+      // Look for the longest match in the previous data
+      for (let offset = 1; offset <= Math.min(i, 9); offset++) {
+        let matchLength = 0;
+        while (matchLength < 9 && 
+               i + matchLength < input.length && 
+               input[i + matchLength] === input[i - offset + matchLength]) {
+          matchLength++;
+        }
+        
+        if (matchLength > bestLength) {
+          bestLength = matchLength;
+          bestOffset = offset;
+        }
+      }
+      
+      if (bestLength > 0) {
+        result += bestLength.toString() + bestOffset.toString();
+        i += bestLength;
+      } else {
+        // No match found, use length 0 to switch back to type 1
+        result += '0';
+      }
+    }
+    
+    isType1 = !isType1;
+  }
+
+  return result;
+};
+
+/**
+ * Compression II: LZ Decompression solver
+ */
+const solveLZDecompression: ContractSolver = (data: any): any => {
+  if (typeof data !== 'string' || data.length === 0) return '';
+
+  const input = data;
+  let result = '';
+  let i = 0;
+  let isType1 = true; // Start with type 1
+
+  while (i < input.length) {
+    const length = parseInt(input[i] || '0', 10);
+    i++;
+    
+    if (length === 0) {
+      // Switch chunk type
+      isType1 = !isType1;
+      continue;
+    }
+    
+    if (isType1) {
+      // Type 1: Direct copy
+      if (i + length <= input.length) {
+        result += input.substring(i, i + length);
+        i += length;
+      }
+    } else {
+      // Type 2: Reference to earlier data
+      if (i < input.length) {
+        const offset = parseInt(input[i] || '0', 10);
+        i++;
+        
+        for (let j = 0; j < length; j++) {
+          const sourceIndex = result.length - offset;
+          if (sourceIndex >= 0 && sourceIndex < result.length) {
+            result += result[sourceIndex];
+          }
+        }
+      }
+    }
+    
+    isType1 = !isType1;
+  }
+
+  return result;
+};
+
+/**
+ * Unique Paths in a Grid I solver
+ */
+const solveUniquePathsInGridI: ContractSolver = (data: any): any => {
+  if (!Array.isArray(data) || data.length !== 2) return 0;
+
+  const [rows, cols] = data;
+  if (typeof rows !== 'number' || typeof cols !== 'number' || rows <= 0 || cols <= 0) return 0;
+
+  // Use combinatorics: C(m+n-2, m-1) where m=rows, n=cols
+  // This is the number of ways to choose (m-1) down moves from (m+n-2) total moves
+  const m = rows;
+  const n = cols;
+  
+  // Calculate (m+n-2)! / ((m-1)! * (n-1)!)
+  let result = 1;
+  for (let i = 0; i < Math.min(m - 1, n - 1); i++) {
+    result = result * (m + n - 2 - i) / (i + 1);
+  }
+  
+  return Math.round(result);
+};
+
+/**
  * Registry of contract solvers
  */
 export const contractSolvers: ContractSolverRegistry = {
@@ -645,7 +932,13 @@ export const contractSolvers: ContractSolverRegistry = {
   'Shortest Path in a Grid': solveShortestPathInGrid,
   'Spiralize Matrix': solveSpiralizeMatrix,
   'Unique Paths in a Grid II': solveUniquePathsInGridII,
-  'Minimum Path Sum in a Triangle': solveMinimumPathSumInTriangle
+  'Minimum Path Sum in a Triangle': solveMinimumPathSumInTriangle,
+  'Encryption II: Vigenère Cipher': solveVigenereCipher,
+  'Algorithmic Stock Trader I': solveAlgorithmicStockTraderI,
+  'HammingCodes: Integer to Encoded Binary': solveHammingCodes,
+  'Compression III: LZ Compression': solveLZCompression,
+  'Compression II: LZ Decompression': solveLZDecompression,
+  'Unique Paths in a Grid I': solveUniquePathsInGridI
 };
 
 /**

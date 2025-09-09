@@ -350,6 +350,252 @@ describe('Contract Solvers', () => {
     });
   });
 
+  describe('Shortest Path in a Grid', () => {
+    const solver = contractSolvers['Shortest Path in a Grid'];
+    
+    test('should find shortest path in grid', () => {
+      const data = [
+        [0,1,0,0,0],
+        [0,0,0,1,0]
+      ];
+      const result = solver!(data);
+      expect(typeof result).toBe('string');
+      expect(result).toMatch(/^[UDLR]*$/);
+    });
+
+    test('should return empty string when no path exists', () => {
+      const data = [
+        [0,1],
+        [1,0]
+      ];
+      const result = solver!(data);
+      expect(result).toBe('');
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe('');
+      expect(solver!([[1]])).toBe('');
+      expect(solver!([[0]])).toBe('');
+    });
+  });
+
+  describe('Spiralize Matrix', () => {
+    const solver = contractSolvers['Spiralize Matrix'];
+    
+    test('should spiralize matrix correctly', () => {
+      const data = [
+        [1,2,3],
+        [4,5,6],
+        [7,8,9]
+      ];
+      const result = solver!(data);
+      expect(result).toEqual([1,2,3,6,9,8,7,4,5]);
+    });
+
+    test('should handle rectangular matrices', () => {
+      const data = [
+        [1,2,3,4],
+        [5,6,7,8],
+        [9,10,11,12]
+      ];
+      const result = solver!(data);
+      expect(result).toEqual([1,2,3,4,8,12,11,10,9,5,6,7]);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toEqual([]);
+      expect(solver!([[1]])).toEqual([1]);
+    });
+  });
+
+  describe('Unique Paths in a Grid II', () => {
+    const solver = contractSolvers['Unique Paths in a Grid II'];
+    
+    test('should count unique paths with obstacles', () => {
+      const data = [
+        [0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,1,0]
+      ];
+      const result = solver!(data);
+      expect(typeof result).toBe('number');
+      expect(result).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should return 0 when start or end is blocked', () => {
+      const data1 = [[1,0],[0,0]];
+      const data2 = [[0,0],[0,1]];
+      expect(solver!(data1)).toBe(0);
+      expect(solver!(data2)).toBe(0);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe(0);
+      expect(solver!([[0]])).toBe(1);
+    });
+  });
+
+  describe('Minimum Path Sum in a Triangle', () => {
+    const solver = contractSolvers['Minimum Path Sum in a Triangle'];
+    
+    test('should find minimum path sum in triangle', () => {
+      const data = [
+        [2],
+        [3,4],
+        [6,5,7],
+        [4,1,8,3]
+      ];
+      const result = solver!(data);
+      expect(result).toBe(11);
+    });
+
+    test('should handle single row triangle', () => {
+      const data = [[5]];
+      const result = solver!(data);
+      expect(result).toBe(5);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe(0);
+    });
+  });
+
+  describe('Encryption II: Vigenère Cipher', () => {
+    const solver = contractSolvers['Encryption II: Vigenère Cipher'];
+    
+    test('should encrypt with Vigenère cipher', () => {
+      const data = ['DASHBOARD', 'LINUX'];
+      const result = solver!(data);
+      expect(result).toBe('OIFBYZIEX');
+    });
+
+    test('should handle different keyword lengths', () => {
+      const data = ['HELLO', 'KEY'];
+      const result = solver!(data);
+      expect(typeof result).toBe('string');
+      expect(result).toHaveLength(5);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe('');
+      expect(solver!(['', 'KEY'])).toBe('');
+      expect(solver!(['HELLO', ''])).toBe('HELLO');
+    });
+  });
+
+  describe('Algorithmic Stock Trader I', () => {
+    const solver = contractSolvers['Algorithmic Stock Trader I'];
+    
+    test('should find maximum profit with single transaction', () => {
+      const data = [112,136,115,124,92,129,189,190,2,79,108,87,80,111,28,161,99,66,144,117,153,72,191,177,184,139,71,9,147,134,9,153,66,97,75,152,134,197,169,182,123,175,116,171,114,96,150];
+      const result = solver!(data);
+      expect(result).toBe(195);
+    });
+
+    test('should return 0 for decreasing prices', () => {
+      const data = [5,4,3,2,1];
+      const result = solver!(data);
+      expect(result).toBe(0);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe(0);
+      expect(solver!([1])).toBe(0);
+      expect(solver!([1,2])).toBe(1);
+    });
+  });
+
+  describe('HammingCodes: Integer to Encoded Binary', () => {
+    const solver = contractSolvers['HammingCodes: Integer to Encoded Binary'];
+    
+    test('should encode numbers with Hamming codes', () => {
+      const result8 = solver!(8);
+      expect(result8).toBe('11110000');
+      
+      const result21 = solver!(21);
+      expect(result21).toBe('1001101011');
+    });
+
+    test('should handle string inputs', () => {
+      const result = solver!('8');
+      expect(typeof result).toBe('string');
+      expect(result).toMatch(/^[01]+$/);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!(0)).toBe('0000');
+      expect(solver!(1)).toBe('1111');
+    });
+  });
+
+  describe('Compression III: LZ Compression', () => {
+    const solver = contractSolvers['Compression III: LZ Compression'];
+    
+    test('should compress strings using LZ', () => {
+      const result = solver!('abracadabra');
+      expect(typeof result).toBe('string');
+      expect(result).toMatch(/^\d+[a-z]+\d+$/);
+    });
+
+    test('should handle example cases', () => {
+      const result1 = solver!('mississippi');
+      expect(typeof result1).toBe('string');
+      expect(result1).toMatch(/^\d+[a-z]+\d+$/);
+      
+      const result2 = solver!('aAAaAAaAaAA');
+      expect(typeof result2).toBe('string');
+      expect(result2).toMatch(/^\d+[a-zA-Z]+\d+$/);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!('')).toBe('');
+      expect(solver!('a')).toBe('1a');
+    });
+  });
+
+  describe('Compression II: LZ Decompression', () => {
+    const solver = contractSolvers['Compression II: LZ Decompression'];
+    
+    test('should decompress LZ encoded strings', () => {
+      const result = solver!('5aaabb450723abb');
+      expect(result).toBe('aaabbaaababababaabb');
+    });
+
+    test('should handle example cases', () => {
+      const result1 = solver!('4miss433ppi');
+      expect(result1).toBe('mississippi');
+      
+      const result2 = solver!('3aAA53035');
+      expect(result2).toBe('aAAaAAaAaAA');
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!('')).toBe('');
+    });
+  });
+
+  describe('Unique Paths in a Grid I', () => {
+    const solver = contractSolvers['Unique Paths in a Grid I'];
+    
+    test('should count unique paths in grid', () => {
+      const result = solver!([2, 14]);
+      expect(result).toBe(14);
+    });
+
+    test('should handle different grid sizes', () => {
+      const result1 = solver!([3, 3]);
+      expect(result1).toBe(6);
+      
+      const result2 = solver!([1, 1]);
+      expect(result2).toBe(1);
+    });
+
+    test('should handle edge cases', () => {
+      expect(solver!([])).toBe(0);
+      expect(solver!([0, 5])).toBe(0);
+      expect(solver!([5, 0])).toBe(0);
+    });
+  });
+
   describe('Solver Registry Functions', () => {
     test('getContractSolver should return correct solver', () => {
       const solver = getContractSolver('Array Jumping Game');
@@ -382,7 +628,17 @@ describe('Contract Solvers', () => {
         'Total Ways to Sum II',
         'Square Root',
         'Array Jumping Game II',
-        'Algorithmic Stock Trader IV'
+        'Algorithmic Stock Trader IV',
+        'Shortest Path in a Grid',
+        'Spiralize Matrix',
+        'Unique Paths in a Grid II',
+        'Minimum Path Sum in a Triangle',
+        'Encryption II: Vigenère Cipher',
+        'Algorithmic Stock Trader I',
+        'HammingCodes: Integer to Encoded Binary',
+        'Compression III: LZ Compression',
+        'Compression II: LZ Decompression',
+        'Unique Paths in a Grid I'
       ];
 
       expectedTypes.forEach(type => {
