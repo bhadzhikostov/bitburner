@@ -124,6 +124,116 @@ declare global {
     totalPlaytime: number;
   }
 
+  interface Warehouse {
+    // Warehouse- and material-related helpers (per docs)
+    setSmartSupply(divisionName: string, city: string, enabled: boolean): void;
+    sellMaterial(
+      divisionName: string,
+      city: string,
+      material: string,
+      amt: string | number,
+      price: string | number
+    ): void;
+    setMaterialMarketTA1(divisionName: string, city: string, material: string, on: boolean): void;
+    setMaterialMarketTA2(divisionName: string, city: string, material: string, on: boolean): void;
+  }
+
+  interface Office {
+    // Office/employee management (per docs)
+    getOffice(divisionName: string, city: string): OfficeInfo;
+    upgradeOfficeSize(divisionName: string, city: string, size: number): void;
+    hireEmployee(divisionName: string, city: string): void;
+    setAutoJobAssignment(
+      divisionName: string,
+      city: string,
+      job: 'Operations' | 'Engineer' | 'Business' | 'Management' | 'Research & Development',
+      amount: number
+    ): void;
+  }
+
+  interface Corporation extends Warehouse, Office {
+    // High-level corporation controls (per docs)
+    hasCorporation(): boolean;
+    createCorporation(name: string, selfFund: boolean): boolean;
+
+    getCorporation(): CorporationInfo;
+
+    // Divisions
+    expandIndustry(industry: string, divisionName: string): void;
+    getDivision(divisionName: string): DivisionInfo;
+    expandCity(divisionName: string, city: string): void;
+
+    // Upgrades and AdVert
+    getUpgradeLevelCost(upgradeName: string): number;
+    levelUpgrade(upgradeName: string): void;
+    getHireAdVertCost(divisionName: string): number;
+    hireAdVert(divisionName: string): void;
+
+    // Unlocks (Smart Supply, R&D lab, etc.)
+    hasUnlock(unlockName: string): boolean;
+    getUnlockCost(unlockName: string): number;
+    unlockUpgrade(unlockName: string): void;
+
+    // Research
+    getResearchCost(divisionName: string, researchName: string): number;
+    hasResearched(divisionName: string, researchName: string): boolean;
+    research(divisionName: string, researchName: string): void;
+
+    // Products (for product industries)
+    makeProduct(
+      divisionName: string,
+      city: string,
+      productName: string,
+      designInvestment: number,
+      marketingInvestment: number
+    ): void;
+    sellProduct(
+      divisionName: string,
+      city: string,
+      productName: string,
+      amt: string | number,
+      price: string | number
+    ): void;
+    setProductMarketTA1(divisionName: string, productName: string, on: boolean): void;
+    setProductMarketTA2(divisionName: string, productName: string, on: boolean): void;
+  }
+
+  interface OfficeInfo {
+    size: number;
+    employees: string[];
+    employeeJobs?: { [job: string]: number };
+  }
+
+  interface DivisionInfo {
+    name: string;
+    type: string;
+    cities: string[];
+    products?: string[];
+    research?: number;
+    producedMaterials?: string[];
+  }
+
+  interface CorporationInfo {
+    name: string;
+    funds: number;
+    revenue: number;
+    expenses: number;
+    profit: number;
+    public: boolean;
+    totalShares: number;
+    numShares: number; // player-owned
+    shareSaleCooldown?: number;
+    issuedShares?: number;
+    sharePrice?: number;
+    valuation?: number;
+    divisions: string[]; // division names
+    state?: string; // corporation state string
+    nextStateTime?: number; // ms until next state
+    cycle?: number;
+    researchPoints?: number; // legacy/global
+    // Extra fields maintained by game may exist; keep interface open-ended
+  }
+
   // Game API functions
   interface NS {
     // Command line arguments
@@ -234,6 +344,7 @@ declare global {
     // Corporation
     getCorporation(): any;
     createCorporation(corpName: string, selfFund: boolean): boolean;
+    corporation?: Corporation;
 
     // Bladeburner
     getBladeburner(): any;
