@@ -23,7 +23,7 @@ const DEFAULT_CITY = 'Sector-12';
 const SPEND_FRACTION = 0.15; // 15%
 const LOOP_INTERVAL = 4000; // ms
 
-type CorpNS = any; // Use loose typing for compatibility across Bitburner versions
+type CorpNS = Corporation; // Use typed Corporation from bitburner.d.ts
 
 export async function main(ns: NS): Promise<void> {
   ns.disableLog('sleep');
@@ -47,10 +47,10 @@ export async function main(ns: NS): Promise<void> {
   ensureDivision(ns, corp, industry, divisionName);
 
   // Ensure office in chosen city
-  ensureOffice(ns, corp, divisionName, city, 9);
+  ensureOffice(corp, divisionName, city, 9);
 
   // Enable Smart Supply if possible for material divisions
-  enableSmartSupplyIfPossible(ns, corp, divisionName);
+  enableSmartSupplyIfPossible(corp, divisionName);
 
   // Main management loop
   // eslint-disable-next-line no-constant-condition
@@ -59,20 +59,20 @@ export async function main(ns: NS): Promise<void> {
     const funds = getSafeFunds(corp);
 
     // Core upgrades (cheap to mid):
-    buyUpgrades(ns, corp, funds);
+    buyUpgrades(corp, funds);
 
     // Research priorities
-    doResearch(ns, corp, divisionName);
+    doResearch(corp, divisionName);
 
     // Expand and staff offices modestly
-    growOffice(ns, corp, divisionName, city, 30);
-    assignEmployees(ns, corp, divisionName, city);
+    growOffice(corp, divisionName, city, 30);
+    assignEmployees(corp, divisionName, city);
 
     // Division-specific actions
     if (isProductIndustry(industry)) {
-      manageProducts(ns, corp, divisionName, city);
+      manageProducts(corp, divisionName, city);
     } else {
-      manageMaterials(ns, corp, divisionName, city);
+      manageMaterials(corp, divisionName, city);
     }
 
     await ns.sleep(LOOP_INTERVAL);
@@ -103,7 +103,7 @@ function ensureDivision(ns: NS, corp: CorpNS, industry: string, divisionName: st
   }
 }
 
-function ensureOffice(ns: NS, corp: CorpNS, divisionName: string, city: string, targetEmployees: number): void {
+function ensureOffice(corp: CorpNS, divisionName: string, city: string, targetEmployees: number): void {
   const cities = safeListCities(corp, divisionName);
   if (!cities.includes(city)) {
     try {
@@ -134,7 +134,7 @@ function ensureOffice(ns: NS, corp: CorpNS, divisionName: string, city: string, 
   }
 }
 
-function growOffice(ns: NS, corp: CorpNS, divisionName: string, city: string, maxEmployees: number): void {
+function growOffice(corp: CorpNS, divisionName: string, city: string, maxEmployees: number): void {
   try {
     const office = corp.getOffice(divisionName, city);
     const current = office.size ?? 3;
@@ -148,7 +148,7 @@ function growOffice(ns: NS, corp: CorpNS, divisionName: string, city: string, ma
   }
 }
 
-function assignEmployees(ns: NS, corp: CorpNS, divisionName: string, city: string): void {
+function assignEmployees(corp: CorpNS, divisionName: string, city: string): void {
   try {
     const office = corp.getOffice(divisionName, city);
     const total = office.employees?.length ?? 0;
@@ -178,7 +178,7 @@ function assignEmployees(ns: NS, corp: CorpNS, divisionName: string, city: strin
   }
 }
 
-function buyUpgrades(ns: NS, corp: CorpNS, funds: number): void {
+function buyUpgrades(corp: CorpNS, funds: number): void {
   const desiredUpgrades = [
     'Smart Factories',
     'Smart Storage',
@@ -213,7 +213,7 @@ function buyUpgrades(ns: NS, corp: CorpNS, funds: number): void {
   }
 }
 
-function doResearch(ns: NS, corp: CorpNS, divisionName: string): void {
+function doResearch(corp: CorpNS, divisionName: string): void {
   try {
     // Unlock Lab, Smart Supply, Market-TA I/II when possible
     if (!corp.hasUnlock('Hi-Tech R&D Laboratory')) {
@@ -252,7 +252,7 @@ function doResearch(ns: NS, corp: CorpNS, divisionName: string): void {
   }
 }
 
-function enableSmartSupplyIfPossible(ns: NS, corp: CorpNS, divisionName: string): void {
+function enableSmartSupplyIfPossible(corp: CorpNS, divisionName: string): void {
   try {
     if (corp.hasUnlock?.('Smart Supply')) {
       const cities = safeListCities(corp, divisionName);
@@ -265,7 +265,7 @@ function enableSmartSupplyIfPossible(ns: NS, corp: CorpNS, divisionName: string)
   }
 }
 
-function manageMaterials(ns: NS, corp: CorpNS, divisionName: string, city: string): void {
+function manageMaterials(corp: CorpNS, divisionName: string, city: string): void {
   // For simple material divisions, just sell all produced at market price; Smart Supply handles inputs
   try {
     const mats: string[] = corp.getDivision(divisionName)?.producedMaterials ?? [];
@@ -286,7 +286,7 @@ function manageMaterials(ns: NS, corp: CorpNS, divisionName: string, city: strin
   }
 }
 
-function manageProducts(ns: NS, corp: CorpNS, divisionName: string, city: string): void {
+function manageProducts(corp: CorpNS, divisionName: string, city: string): void {
   try {
     // Keep up to 3 products; make new when fewer than 3 or an existing is outdated
     const div = corp.getDivision(divisionName);
