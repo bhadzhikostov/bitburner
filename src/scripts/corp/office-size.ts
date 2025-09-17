@@ -73,13 +73,13 @@
         ns.tprint(`\nCompleted! Upgraded ${totalUpgraded} offices for a total cost of $${ns.formatNumber(totalCost)}`);
     }
 
-    function assignByRatio(ns: NS, divisionName: string, city: string, totalEmployees: number): void {
+    function assignByRatio(ns: NS, divisionName: string, city: CityName, totalEmployees: number): void {
         // Target ratios (sane defaults across industries)
         const ratios = {
-            Operations: 0.3,
-            Engineer: 0.3,
+            Operations: 0.25,
+            Engineer: 0.25,
             Business: 0.15,
-            Management: 0.15,
+            Management: 0.25,
             "Research & Development": 0.1,
         } as const;
 
